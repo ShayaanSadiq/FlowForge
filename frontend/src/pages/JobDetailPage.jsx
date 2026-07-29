@@ -10,6 +10,21 @@ import {
 import { jobsApi } from '../api/client';
 import StatusBadge from '../components/StatusBadge';
 
+const PRE_BLOCK_SX = {
+  bgcolor: 'background.default',
+  p: 2,
+  borderRadius: 1,
+  overflow: 'auto',
+  maxWidth: '100%',
+  maxHeight: 400,
+  fontSize: 13,
+  fontFamily: 'monospace',
+  whiteSpace: 'pre-wrap',
+  wordBreak: 'break-word',
+  overflowWrap: 'anywhere',
+  m: 0,
+};
+
 export default function JobDetailPage() {
   const { jobId } = useParams();
   const [job, setJob] = useState(null);
@@ -59,40 +74,32 @@ export default function JobDetailPage() {
             )}
           </Box>
 
-          <Paper sx={{ p: 3, mb: 3 }}>
+          <Paper sx={{ p: 3, mb: 3, overflow: 'hidden' }}>
             <Typography variant="body2" color="text.secondary">Job ID</Typography>
-            <Typography sx={{ fontFamily: 'monospace', mb: 2 }}>{job.id}</Typography>
+            <Box component="pre" sx={{ ...PRE_BLOCK_SX, maxHeight: 80, mb: 2 }}>{job.id}</Box>
             <Typography variant="body2" color="text.secondary">Type</Typography>
             <Typography sx={{ mb: 2 }}>{job.type}</Typography>
             <Typography variant="body2" color="text.secondary">Payload</Typography>
-            <Typography sx={{ mb: 2, whiteSpace: 'pre-wrap' }}>{job.payload}</Typography>
+            <Box component="pre" sx={{ ...PRE_BLOCK_SX, mb: 2 }}>{job.payload}</Box>
             <Typography variant="body2" color="text.secondary">Attempts</Typography>
             <Typography sx={{ mb: 2 }}>{job.attempts} / {job.maxAttempts}</Typography>
             {job.result && (
               <>
                 <Typography variant="body2" color="text.secondary">Result</Typography>
-                <Typography sx={{ mb: 2 }}>{job.result}</Typography>
+                <Box component="pre" sx={{ ...PRE_BLOCK_SX, mb: 2 }}>{job.result}</Box>
               </>
             )}
             {job.errorMessage && (
               <>
                 <Typography variant="body2" color="error">Error</Typography>
-                <Typography color="error" sx={{ mb: 2 }}>{job.errorMessage}</Typography>
+                <Box component="pre" sx={{ ...PRE_BLOCK_SX, mb: 2, color: 'error.main' }}>{job.errorMessage}</Box>
               </>
             )}
           </Paper>
 
-          <Paper sx={{ p: 3 }}>
+          <Paper sx={{ p: 3, overflow: 'hidden' }}>
             <Typography variant="h6" gutterBottom>Execution Logs</Typography>
-            <Box component="pre" sx={{
-              bgcolor: 'background.default',
-              p: 2,
-              borderRadius: 1,
-              overflow: 'auto',
-              maxHeight: 400,
-              fontSize: 13,
-              fontFamily: 'monospace',
-            }}>
+            <Box component="pre" sx={PRE_BLOCK_SX}>
               {(job.logs && job.logs.length > 0) ? job.logs.join('\n') : 'No logs yet...'}
             </Box>
           </Paper>
