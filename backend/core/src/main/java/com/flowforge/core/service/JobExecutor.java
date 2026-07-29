@@ -3,14 +3,22 @@ package com.flowforge.core.service;
 import com.flowforge.core.domain.Job;
 import com.flowforge.core.domain.JobResult;
 import com.flowforge.core.repository.JobResultRepository;
+import com.flowforge.core.service.jobhandler.Base64CodecJobHandler;
+import com.flowforge.core.service.jobhandler.CsvAnalyzeJobHandler;
+import com.flowforge.core.service.jobhandler.HashGenerateJobHandler;
+import com.flowforge.core.service.jobhandler.HttpRequestJobHandler;
+import com.flowforge.core.service.jobhandler.JobHandlerException;
+import com.flowforge.core.service.jobhandler.JsonFormatJobHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 @Slf4j
 @Component
@@ -18,16 +26,27 @@ import java.util.concurrent.TimeUnit;
 public class JobExecutor {
 
     private final JobResultRepository jobResultRepository;
+    private final PythonScriptRunner pythonScriptRunner;
+    private final HttpRequestJobHandler httpRequestJobHandler;
+    private final JsonFormatJobHandler jsonFormatJobHandler;
+    private final CsvAnalyzeJobHandler csvAnalyzeJobHandler;
+    private final HashGenerateJobHandler hashGenerateJobHandler;
+    private final Base64CodecJobHandler base64CodecJobHandler;
 
     public ExecutionResult execute(Job job) throws InterruptedException {
         Instant start = Instant.now();
         appendLog(job, "Starting job execution for type: " + job.getType());
 
         String output = switch (job.getType()) {
+            case PYTHON_SCRIPT -> runPythonScript(job);
+            case HTTP_REQUEST -> runWithHandler(job, httpRequestJobHandler::execute);
+            case JSON_FORMAT -> runWithHandler(job, jsonFormatJobHandler::execute);
+            case CSV_ANALYZE -> runWithHandler(job, csvAnalyzeJobHandler::execute);
+            case HASH_GENERATE -> runWithHandler(job, hashGenerateJobHandler::execute);
+            case BASE64_CODEC -> runWithHandler(job, base64CodecJobHandler::execute);
             case SIMULATION -> runSimulation(job);
             case DATA_TRANSFORM -> runDataTransform(job);
             case REPORT_GENERATION -> runReportGeneration(job);
-            case PYTHON_SCRIPT -> runPythonScript(job);
         };
 
         long durationMs = Duration.between(start, Instant.now()).toMillis();
@@ -45,6 +64,21 @@ public class JobExecutor {
         jobResultRepository.save(result);
 
         return new ExecutionResult(output, durationMs);
+    }
+
+    @FunctionalInterface
+    private interface JobHandler {
+        String run(Job job, Consumer<String> log) throws Exception;
+    }
+
+    private String runWithHandler(Job job, JobHandler handler) throws InterruptedException {
+        try {
+            return handler.run(job, line -> appendLog(job, line));
+        } catch (JobHandlerException ex) {
+            throw new RuntimeException(ex.getMessage(), ex);
+        } catch (Exception ex) {
+            throw new RuntimeException("Job failed: " + ex.getMessage(), ex);
+        }
     }
 
     private String runSimulation(Job job) throws InterruptedException {
@@ -73,10 +107,26 @@ public class JobExecutor {
     }
 
     private String runPythonScript(Job job) throws InterruptedException {
-        appendLog(job, "Python script execution simulated (sandbox not enabled in MVP)");
-        appendLog(job, "Script: " + job.getPayload());
-        TimeUnit.MILLISECONDS.sleep(800);
-        return "Simulated Python output: processed " + job.getPayload().split("\\s+").length + " tokens";
+        appendLog(job, "Running Python script");
+        try {
+            PythonScriptRunner.PythonRunResult result = pythonScriptRunner.run(
+                    job.getPayload(),
+                    line -> appendLog(job, line));
+
+            String output = result.stdout().isBlank()
+                    ? "(no stdout)"
+                    : result.stdout();
+
+            if (!result.stderr().isBlank()) {
+                appendLog(job, "stderr captured (" + result.stderr().lines().count() + " lines)");
+            }
+
+            return output;
+        } catch (PythonScriptRunner.PythonExecutionException ex) {
+            throw new RuntimeException(ex.getMessage(), ex);
+        } catch (IOException ex) {
+            throw new RuntimeException("Failed to execute Python script: " + ex.getMessage(), ex);
+        }
     }
 
     public void appendLog(Job job, String message) {

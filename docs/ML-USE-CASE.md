@@ -42,9 +42,26 @@ Logs + metrics stored (durationMs, attempt count)
 Dashboard shows run status and output
 ```
 
+## Python Script Jobs
+
+The worker runs real Python 3 scripts submitted as the job payload:
+
+- Script is written to a temp file, executed with `python3`, then cleaned up
+- stdout is captured as job output; stderr is logged line-by-line
+- 30 second timeout, max script/output size limits
+- Requires Python 3 in the worker environment (included in the worker Docker image)
+
+Example payload:
+
+```python
+print("Hello from FlowForge")
+for i in range(3):
+    print(f"step {i}")
+```
+
 ## Future Extensions
 
-- Sandboxed Docker execution for real Python scripts
+- Per-job Docker sandbox for stronger isolation
 - Metrics charts (latency distribution, success rate over time)
 - Job dependencies (run B after A succeeds)
 - Integration with object storage (S3) for model artifacts

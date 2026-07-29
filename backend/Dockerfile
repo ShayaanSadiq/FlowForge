@@ -19,8 +19,9 @@ COPY --from=build /app/api/target/flowforge-api-*.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
 
-# Worker runtime
+# Worker runtime (includes Python for PYTHON_SCRIPT jobs)
 FROM eclipse-temurin:21-jre-alpine AS worker
+RUN apk add --no-cache python3
 WORKDIR /app
 COPY --from=build /app/worker/target/flowforge-worker-*.jar app.jar
 EXPOSE 8081

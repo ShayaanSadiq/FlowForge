@@ -10,6 +10,11 @@ flowforge:
   worker:
     poll-interval-ms: 2000
     batch-size: 10
+  python:
+    executable: python3
+    timeout-seconds: 30
+    max-script-chars: 100000
+    max-output-chars: 65536
 
 management:
   endpoints:
