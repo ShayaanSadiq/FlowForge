@@ -99,9 +99,9 @@ See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for full guides on:
 - **AWS ECS Fargate** — backend + worker via ECR
 - **MongoDB Atlas** — managed database
 
-## Portfolio Narrative
+/* ## Portfolio Narrative
 
-See [docs/PORTFOLIO.md](docs/PORTFOLIO.md) for how to present this project in your UofT MASc application.
+See [docs/PORTFOLIO.md](docs/PORTFOLIO.md) for how to present this project in your UofT MASc application. */
 
 ## Tech Stack
 
