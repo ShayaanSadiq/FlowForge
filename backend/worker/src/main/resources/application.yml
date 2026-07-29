@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: flowforge-worker
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/flowforge}
+      database: ${SPRING_DATA_MONGODB_DATABASE:flowforge}
+
+flowforge:
+  worker:
+    poll-interval-ms: 2000
+    batch-size: 10
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when_authorized
+
+server:
+  port: ${SERVER_PORT:8081}
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

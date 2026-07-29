@@ -1,0 +1,53 @@
+services:
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      target: api
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://mongo:27017/flowforge
+      SPRING_DATA_MONGODB_DATABASE: flowforge
+      FLOWFORGE_JWT_SECRET: flowforge-dev-secret-key-change-in-production-min-32-chars
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: ./backend
+      target: worker
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://mongo:27017/flowforge
+      SPRING_DATA_MONGODB_DATABASE: flowforge
+      SERVER_PORT: 8081
+    depends_on:
+      mongo:
+        condition: service_healthy
+      backend:
+        condition: service_started
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: http://localhost:8080
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  mongo_data:

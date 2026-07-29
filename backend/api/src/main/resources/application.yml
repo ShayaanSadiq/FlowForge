@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: flowforge-api
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/flowforge}
+      database: ${SPRING_DATA_MONGODB_DATABASE:flowforge}
+    web:
+      pageable:
+        max-page-size: 100
+        default-page-size: 20
+
+flowforge:
+  jwt:
+    secret: ${FLOWFORGE_JWT_SECRET:flowforge-dev-secret-key-change-in-production-min-32-chars}
+    expiration-hours: 24
+
+server:
+  port: ${SERVER_PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when_authorized
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%X{correlationId}] %logger{36} - %msg%n"
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
