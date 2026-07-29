@@ -7,7 +7,20 @@ public enum JobType {
     CSV_ANALYZE,
     HASH_GENERATE,
     BASE64_CODEC,
-    SIMULATION,
     DATA_TRANSFORM,
-    REPORT_GENERATION
+
+    /** @deprecated Legacy demo job type kept for reading existing MongoDB documents. */
+    @Deprecated
+    SIMULATION,
+
+    /** @deprecated Legacy demo job type kept for reading existing MongoDB documents. */
+    @Deprecated
+    REPORT_GENERATION;
+
+    public boolean isDeprecated() {
+        return switch (this) {
+            case SIMULATION, REPORT_GENERATION -> true;
+            default -> false;
+        };
+    }
 }

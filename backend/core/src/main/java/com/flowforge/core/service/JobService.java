@@ -20,6 +20,10 @@ public class JobService {
     private final AuditService auditService;
 
     public JobResponse createJob(String userId, CreateJobRequest request) {
+        if (request.getType() != null && request.getType().isDeprecated()) {
+            throw new IllegalArgumentException("Job type " + request.getType() + " is no longer supported");
+        }
+
         Job job = Job.builder()
                 .userId(userId)
                 .type(request.getType())

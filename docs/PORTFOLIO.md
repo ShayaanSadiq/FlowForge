@@ -48,7 +48,7 @@ Before sharing your repo with admissions reviewers:
 
 1. **Show architecture** (30s): "React on Vercel talks to Spring Boot on AWS ECS, which stores jobs in MongoDB Atlas. A separate worker process polls for pending jobs."
 
-2. **Submit a job** (30s): Register, submit a Simulation job, show it transition PENDING → RUNNING → SUCCEEDED.
+2. **Submit a job** (30s): Register, submit an HTTP Request or Python Script job, show it transition PENDING → RUNNING → SUCCEEDED.
 
 3. **Show logs** (30s): Open job detail, point out timestamped execution logs and result.
 

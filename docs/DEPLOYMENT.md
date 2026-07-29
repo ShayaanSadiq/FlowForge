@@ -180,7 +180,7 @@ curl https://api.yourdomain.com/actuator/health
 curl -X POST https://api.yourdomain.com/api/jobs \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
-  -d '{"type":"SIMULATION","payload":"hello world"}'
+  -d '{"type":"HTTP_REQUEST","payload":"{\"url\":\"https://api.github.com\",\"method\":\"GET\"}"}'
 ```
 
 ---

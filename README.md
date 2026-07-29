@@ -8,7 +8,7 @@ Cloud-native async job processing platform built with **Spring Boot**, **React**
 - Submit async jobs via REST API (`POST /api/jobs`)
 - Background worker with job state machine: `PENDING → RUNNING → SUCCEEDED | FAILED → DEAD_LETTER`
 - Automatic retries (up to 3 attempts) with dead-letter queue
-- Job types: Simulation, Data Transform, Report Generation, Python Script (simulated)
+- Job types: Python Script, HTTP Request, JSON Format, CSV Analyze, Data Transform, Hash Generate, Base64 Codec
 - React dashboard with live job status, logs, and retry controls
 - OpenAPI docs at `/swagger-ui.html`
 - Health checks at `/actuator/health`

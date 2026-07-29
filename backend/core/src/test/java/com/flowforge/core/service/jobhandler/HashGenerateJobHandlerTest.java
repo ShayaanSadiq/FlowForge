@@ -41,4 +41,27 @@ class HashGenerateJobHandlerTest {
         job.setPayload(payload);
         return job;
     }
+
+    @Test
+    void verifiesExpectedHash() throws Exception {
+        String result = handler.execute(
+                jobWithPayload("""
+                        {"text":"hello","algorithm":"SHA-256","expected":"2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"}
+                        """),
+                msg -> {});
+
+        assertThat(result).contains("verification=MATCH");
+    }
+
+    @Test
+    void hashesEachLineInBatchMode() throws Exception {
+        String result = handler.execute(
+                jobWithPayload("""
+                        {"text":"alpha\\nbeta","algorithm":"SHA-256","mode":"lines"}
+                        """),
+                msg -> {});
+
+        assertThat(result).contains("alpha => SHA-256:");
+        assertThat(result).contains("beta => SHA-256:");
+    }
 }

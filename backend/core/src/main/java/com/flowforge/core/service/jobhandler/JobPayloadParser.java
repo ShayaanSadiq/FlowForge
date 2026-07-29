@@ -1,5 +1,6 @@
 package com.flowforge.core.service.jobhandler;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
@@ -23,6 +24,14 @@ public class JobPayloadParser {
             return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(node);
         } catch (Exception ex) {
             throw new JobHandlerException("Invalid JSON: " + ex.getMessage());
+        }
+    }
+
+    public String prettyPrint(JsonNode node) {
+        try {
+            return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(node);
+        } catch (JsonProcessingException ex) {
+            throw new JobHandlerException("Unable to format JSON node: " + ex.getMessage());
         }
     }
 

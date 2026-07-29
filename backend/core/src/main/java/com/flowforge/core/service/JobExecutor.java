@@ -5,6 +5,7 @@ import com.flowforge.core.domain.JobResult;
 import com.flowforge.core.repository.JobResultRepository;
 import com.flowforge.core.service.jobhandler.Base64CodecJobHandler;
 import com.flowforge.core.service.jobhandler.CsvAnalyzeJobHandler;
+import com.flowforge.core.service.jobhandler.DataTransformJobHandler;
 import com.flowforge.core.service.jobhandler.HashGenerateJobHandler;
 import com.flowforge.core.service.jobhandler.HttpRequestJobHandler;
 import com.flowforge.core.service.jobhandler.JobHandlerException;
@@ -17,7 +18,6 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 @Slf4j
@@ -32,6 +32,7 @@ public class JobExecutor {
     private final CsvAnalyzeJobHandler csvAnalyzeJobHandler;
     private final HashGenerateJobHandler hashGenerateJobHandler;
     private final Base64CodecJobHandler base64CodecJobHandler;
+    private final DataTransformJobHandler dataTransformJobHandler;
 
     public ExecutionResult execute(Job job) throws InterruptedException {
         Instant start = Instant.now();
@@ -44,9 +45,9 @@ public class JobExecutor {
             case CSV_ANALYZE -> runWithHandler(job, csvAnalyzeJobHandler::execute);
             case HASH_GENERATE -> runWithHandler(job, hashGenerateJobHandler::execute);
             case BASE64_CODEC -> runWithHandler(job, base64CodecJobHandler::execute);
-            case SIMULATION -> runSimulation(job);
-            case DATA_TRANSFORM -> runDataTransform(job);
-            case REPORT_GENERATION -> runReportGeneration(job);
+            case DATA_TRANSFORM -> runWithHandler(job, dataTransformJobHandler::execute);
+            case SIMULATION, REPORT_GENERATION ->
+                    throw new RuntimeException("Job type " + job.getType() + " is no longer supported");
         };
 
         long durationMs = Duration.between(start, Instant.now()).toMillis();
@@ -79,31 +80,6 @@ public class JobExecutor {
         } catch (Exception ex) {
             throw new RuntimeException("Job failed: " + ex.getMessage(), ex);
         }
-    }
-
-    private String runSimulation(Job job) throws InterruptedException {
-        appendLog(job, "Running simulation with payload: " + job.getPayload());
-        int steps = Math.clamp(job.getPayload().length() % 5 + 1, 1, 5);
-        for (int i = 1; i <= steps; i++) {
-            TimeUnit.MILLISECONDS.sleep(500);
-            appendLog(job, "Simulation step " + i + "/" + steps + " complete");
-        }
-        return "Simulation finished with " + steps + " steps";
-    }
-
-    private String runDataTransform(Job job) throws InterruptedException {
-        appendLog(job, "Transforming data: " + job.getPayload());
-        TimeUnit.MILLISECONDS.sleep(1000);
-        String transformed = job.getPayload().toUpperCase();
-        appendLog(job, "Transform output length: " + transformed.length());
-        return transformed;
-    }
-
-    private String runReportGeneration(Job job) throws InterruptedException {
-        appendLog(job, "Generating report for: " + job.getPayload());
-        TimeUnit.MILLISECONDS.sleep(1500);
-        appendLog(job, "Report sections: summary, metrics, recommendations");
-        return "Report generated for '" + job.getPayload() + "' at " + Instant.now();
     }
 
     private String runPythonScript(Job job) throws InterruptedException {
