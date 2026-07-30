@@ -2,6 +2,7 @@ package com.flowforge.core.service;
 
 import com.flowforge.core.domain.Job;
 import com.flowforge.core.domain.JobStatus;
+import com.flowforge.core.domain.JobType;
 import com.flowforge.core.dto.CreateJobRequest;
 import com.flowforge.core.dto.JobResponse;
 import com.flowforge.core.repository.JobRepository;
@@ -38,9 +39,36 @@ public class JobService {
         return toResponse(saved);
     }
 
-    public Page<JobResponse> listJobs(String userId, Pageable pageable) {
-        return jobRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
-                .map(this::toResponse);
+    public Page<JobResponse> listJobs(String userId, String statusFilter, JobType type, Pageable pageable) {
+        return findJobs(userId, statusFilter, type, pageable).map(this::toResponse);
+    }
+
+    private Page<Job> findJobs(String userId, String statusFilter, JobType type, Pageable pageable) {
+        Instant now = Instant.now();
+        boolean hasType = type != null;
+        boolean hasStatus = statusFilter != null && !statusFilter.isBlank() && !"ALL".equalsIgnoreCase(statusFilter);
+
+        if (hasStatus && "SCHEDULED".equalsIgnoreCase(statusFilter)) {
+            return hasType
+                    ? jobRepository.findScheduledByUserIdAndType(userId, now, type, pageable)
+                    : jobRepository.findScheduledByUserId(userId, now, pageable);
+        }
+
+        if (hasStatus) {
+            JobStatus status;
+            try {
+                status = JobStatus.valueOf(statusFilter.toUpperCase());
+            } catch (IllegalArgumentException ex) {
+                throw new IllegalArgumentException("Unsupported status filter: " + statusFilter);
+            }
+            return hasType
+                    ? jobRepository.findByUserIdAndStatusAndType(userId, status, type, pageable)
+                    : jobRepository.findByUserIdAndStatus(userId, status, pageable);
+        }
+
+        return hasType
+                ? jobRepository.findByUserIdAndType(userId, type, pageable)
+                : jobRepository.findByUserId(userId, pageable);
     }
 
     public JobResponse getJob(String userId, String jobId) {

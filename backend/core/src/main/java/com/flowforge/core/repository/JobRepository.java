@@ -2,6 +2,7 @@ package com.flowforge.core.repository;
 
 import com.flowforge.core.domain.Job;
 import com.flowforge.core.domain.JobStatus;
+import com.flowforge.core.domain.JobType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
@@ -13,7 +14,32 @@ import java.util.Optional;
 
 public interface JobRepository extends MongoRepository<Job, String> {
 
-    Page<Job> findByUserIdOrderByCreatedAtDesc(String userId, Pageable pageable);
+    Page<Job> findByUserId(String userId, Pageable pageable);
+
+    Page<Job> findByUserIdAndStatus(String userId, JobStatus status, Pageable pageable);
+
+    Page<Job> findByUserIdAndType(String userId, JobType type, Pageable pageable);
+
+    Page<Job> findByUserIdAndStatusAndType(String userId, JobStatus status, JobType type, Pageable pageable);
+
+    @Query("""
+            {
+              'userId': ?0,
+              'status': 'PENDING',
+              'scheduledAt': { $gt: ?1 }
+            }
+            """)
+    Page<Job> findScheduledByUserId(String userId, Instant now, Pageable pageable);
+
+    @Query("""
+            {
+              'userId': ?0,
+              'status': 'PENDING',
+              'scheduledAt': { $gt: ?1 },
+              'type': ?2
+            }
+            """)
+    Page<Job> findScheduledByUserIdAndType(String userId, Instant now, JobType type, Pageable pageable);
 
     @Query("""
             {

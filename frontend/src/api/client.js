@@ -30,7 +30,20 @@ export const authApi = {
 };
 
 export const jobsApi = {
-  list: (page = 0, size = 20) => apiRequest(`/api/jobs?page=${page}&size=${size}`),
+  list: ({ page = 0, size = 20, status, type, sort = 'createdAt,desc' } = {}) => {
+    const params = new URLSearchParams({
+      page: String(page),
+      size: String(size),
+      sort,
+    });
+    if (status && status !== 'ALL') {
+      params.set('status', status);
+    }
+    if (type && type !== 'ALL') {
+      params.set('type', type);
+    }
+    return apiRequest(`/api/jobs?${params}`);
+  },
   get: (id) => apiRequest(`/api/jobs/${id}`),
   create: (data) => apiRequest('/api/jobs', { method: 'POST', body: JSON.stringify(data) }),
   retry: (id) => apiRequest(`/api/jobs/${id}/retry`, { method: 'POST' }),

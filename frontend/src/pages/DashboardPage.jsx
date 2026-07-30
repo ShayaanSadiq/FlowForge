@@ -27,19 +27,52 @@ import { formatScheduledAt } from '../components/JobScheduleForm';
 
 const PAGE_SIZE_OPTIONS = [20, 50, 100];
 
+const STATUS_FILTERS = [
+  { value: 'ALL', label: 'All statuses' },
+  { value: 'SCHEDULED', label: 'Scheduled' },
+  { value: 'PENDING', label: 'Pending' },
+  { value: 'RUNNING', label: 'Running' },
+  { value: 'SUCCEEDED', label: 'Succeeded' },
+  { value: 'FAILED', label: 'Failed' },
+  { value: 'DEAD_LETTER', label: 'Dead letter' },
+];
+
+const TYPE_FILTERS = [
+  { value: 'ALL', label: 'All types' },
+  { value: 'PYTHON_SCRIPT', label: 'Python Script' },
+  { value: 'JSON_FORMAT', label: 'JSON Format' },
+  { value: 'CSV_ANALYZE', label: 'CSV Analyze' },
+  { value: 'HASH_GENERATE', label: 'Hash Generate' },
+  { value: 'BASE64_CODEC', label: 'Base64 Codec' },
+];
+
+const SORT_OPTIONS = [
+  { value: 'createdAt,desc', label: 'Newest first' },
+  { value: 'createdAt,asc', label: 'Oldest first' },
+];
+
 export default function DashboardPage() {
   const [jobs, setJobs] = useState([]);
   const [stats, setStats] = useState(null);
   const [error, setError] = useState('');
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [typeFilter, setTypeFilter] = useState('ALL');
+  const [sort, setSort] = useState('createdAt,desc');
   const [totalJobs, setTotalJobs] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
   const loadData = useCallback(async () => {
     try {
       const [jobsPage, statsData] = await Promise.all([
-        jobsApi.list(page, pageSize),
+        jobsApi.list({
+          page,
+          size: pageSize,
+          status: statusFilter,
+          type: typeFilter,
+          sort,
+        }),
         statsApi.get(),
       ]);
 
@@ -57,7 +90,7 @@ export default function DashboardPage() {
     } catch (err) {
       setError(err.message);
     }
-  }, [page, pageSize]);
+  }, [page, pageSize, statusFilter, typeFilter, sort]);
 
   useEffect(() => {
     loadData();
@@ -72,6 +105,21 @@ export default function DashboardPage() {
 
   const handlePageChange = (_event, value) => {
     setPage(value - 1);
+  };
+
+  const handleStatusFilterChange = (event) => {
+    setStatusFilter(event.target.value);
+    setPage(0);
+  };
+
+  const handleTypeFilterChange = (event) => {
+    setTypeFilter(event.target.value);
+    setPage(0);
+  };
+
+  const handleSortChange = (event) => {
+    setSort(event.target.value);
+    setPage(0);
   };
 
   const rangeStart = totalJobs === 0 ? 0 : page * pageSize + 1;
@@ -99,10 +147,60 @@ export default function DashboardPage() {
         ))}
       </Grid>
 
+      <Paper sx={{ p: 2, mb: 2 }}>
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={4}>
+            <FormControl fullWidth size="small">
+              <InputLabel id="status-filter-label">Status</InputLabel>
+              <Select
+                labelId="status-filter-label"
+                value={statusFilter}
+                label="Status"
+                onChange={handleStatusFilterChange}
+              >
+                {STATUS_FILTERS.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <FormControl fullWidth size="small">
+              <InputLabel id="type-filter-label">Type</InputLabel>
+              <Select
+                labelId="type-filter-label"
+                value={typeFilter}
+                label="Type"
+                onChange={handleTypeFilterChange}
+              >
+                {TYPE_FILTERS.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <FormControl fullWidth size="small">
+              <InputLabel id="sort-filter-label">Sort by created</InputLabel>
+              <Select
+                labelId="sort-filter-label"
+                value={sort}
+                label="Sort by created"
+                onChange={handleSortChange}
+              >
+                {SORT_OPTIONS.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+        </Grid>
+      </Paper>
+
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 2 }}>
         <Typography variant="body2" color="text.secondary">
           {totalJobs === 0
-            ? 'No jobs'
+            ? 'No jobs match the current filters'
             : `Showing ${rangeStart}–${rangeEnd} of ${totalJobs} job${totalJobs !== 1 ? 's' : ''}`}
         </Typography>
         <FormControl size="small" sx={{ minWidth: 140 }}>
@@ -136,7 +234,7 @@ export default function DashboardPage() {
           <TableBody>
             {jobs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} align="center">No jobs yet. Submit your first job.</TableCell>
+                <TableCell colSpan={7} align="center">No jobs match the current filters.</TableCell>
               </TableRow>
             ) : jobs.map((job) => (
               <TableRow key={job.id} hover>
