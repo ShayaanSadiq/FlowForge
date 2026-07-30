@@ -36,6 +36,24 @@ class HashGenerateJobHandlerTest {
                 .isInstanceOf(JobHandlerException.class);
     }
 
+    @Test
+    void rejectsOversizedSingleInput() {
+        assertThatThrownBy(() -> handler.execute(
+                jobWithPayload("{\"text\":\"" + "a".repeat(100_001) + "\",\"algorithm\":\"SHA-256\"}"),
+                msg -> {}))
+                .isInstanceOf(JobHandlerException.class)
+                .hasMessageContaining("100000");
+    }
+
+    @Test
+    void rejectsTooManyLines() {
+        assertThatThrownBy(() -> handler.execute(
+                jobWithPayload("{\"text\":\"" + "line\\n".repeat(501) + "\",\"mode\":\"lines\"}"),
+                msg -> {}))
+                .isInstanceOf(JobHandlerException.class)
+                .hasMessageContaining("500 lines");
+    }
+
     private static com.flowforge.core.domain.Job jobWithPayload(String payload) {
         com.flowforge.core.domain.Job job = new com.flowforge.core.domain.Job();
         job.setPayload(payload);

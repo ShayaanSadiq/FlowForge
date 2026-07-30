@@ -5,9 +5,7 @@ import com.flowforge.core.domain.JobResult;
 import com.flowforge.core.repository.JobResultRepository;
 import com.flowforge.core.service.jobhandler.Base64CodecJobHandler;
 import com.flowforge.core.service.jobhandler.CsvAnalyzeJobHandler;
-import com.flowforge.core.service.jobhandler.DataTransformJobHandler;
 import com.flowforge.core.service.jobhandler.HashGenerateJobHandler;
-import com.flowforge.core.service.jobhandler.HttpRequestJobHandler;
 import com.flowforge.core.service.jobhandler.JobHandlerException;
 import com.flowforge.core.service.jobhandler.JsonFormatJobHandler;
 import lombok.RequiredArgsConstructor;
@@ -27,12 +25,10 @@ public class JobExecutor {
 
     private final JobResultRepository jobResultRepository;
     private final PythonScriptRunner pythonScriptRunner;
-    private final HttpRequestJobHandler httpRequestJobHandler;
     private final JsonFormatJobHandler jsonFormatJobHandler;
     private final CsvAnalyzeJobHandler csvAnalyzeJobHandler;
     private final HashGenerateJobHandler hashGenerateJobHandler;
     private final Base64CodecJobHandler base64CodecJobHandler;
-    private final DataTransformJobHandler dataTransformJobHandler;
 
     public ExecutionResult execute(Job job) throws InterruptedException {
         Instant start = Instant.now();
@@ -40,13 +36,11 @@ public class JobExecutor {
 
         String output = switch (job.getType()) {
             case PYTHON_SCRIPT -> runPythonScript(job);
-            case HTTP_REQUEST -> runWithHandler(job, httpRequestJobHandler::execute);
             case JSON_FORMAT -> runWithHandler(job, jsonFormatJobHandler::execute);
             case CSV_ANALYZE -> runWithHandler(job, csvAnalyzeJobHandler::execute);
             case HASH_GENERATE -> runWithHandler(job, hashGenerateJobHandler::execute);
             case BASE64_CODEC -> runWithHandler(job, base64CodecJobHandler::execute);
-            case DATA_TRANSFORM -> runWithHandler(job, dataTransformJobHandler::execute);
-            case SIMULATION, REPORT_GENERATION ->
+            case HTTP_REQUEST, DATA_TRANSFORM, SIMULATION, REPORT_GENERATION ->
                     throw new RuntimeException("Job type " + job.getType() + " is no longer supported");
         };
 

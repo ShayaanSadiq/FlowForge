@@ -14,10 +14,8 @@ import JobPayloadForm, { buildPayload, getDefaultFormState } from '../components
 
 const JOB_TYPES = [
   { value: 'PYTHON_SCRIPT', label: 'Python Script' },
-  { value: 'HTTP_REQUEST', label: 'HTTP Request' },
   { value: 'JSON_FORMAT', label: 'JSON Format & Validate' },
   { value: 'CSV_ANALYZE', label: 'CSV Analyze' },
-  { value: 'DATA_TRANSFORM', label: 'Data Transform' },
   { value: 'HASH_GENERATE', label: 'Hash Generate (SHA-256/512)' },
   { value: 'BASE64_CODEC', label: 'Base64 Encode/Decode' },
 ];

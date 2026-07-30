@@ -15,6 +15,10 @@ import java.util.function.Consumer;
 public class HashGenerateJobHandler {
 
     private static final Set<String> ALLOWED = Set.of("SHA-256", "SHA-512");
+    private static final int MAX_SINGLE_TEXT_CHARS = 100_000;
+    private static final int MAX_LINES_MODE_TEXT_CHARS = 200_000;
+    private static final int MAX_LINES = 500;
+    private static final int MAX_LINE_CHARS = 10_000;
 
     private final JobPayloadParser payloadParser;
 
@@ -30,8 +34,11 @@ public class HashGenerateJobHandler {
         }
 
         if ("lines".equals(request.mode())) {
+            validateLinesModeInput(request.text());
             return hashLines(request, log);
         }
+
+        validateSingleModeInput(request.text());
 
         String hash = computeHash(request.text(), request.algorithm());
         log.accept("Computed " + request.algorithm() + " hash");
@@ -92,6 +99,32 @@ public class HashGenerateJobHandler {
             throw new JobHandlerException("No non-empty lines to hash");
         }
         return output.toString();
+    }
+
+    private void validateSingleModeInput(String text) {
+        if (text.length() > MAX_SINGLE_TEXT_CHARS) {
+            throw new JobHandlerException(
+                    "Input exceeds limit of " + MAX_SINGLE_TEXT_CHARS + " characters for single-string hashing");
+        }
+    }
+
+    private void validateLinesModeInput(String text) {
+        if (text.length() > MAX_LINES_MODE_TEXT_CHARS) {
+            throw new JobHandlerException(
+                    "Input exceeds limit of " + MAX_LINES_MODE_TEXT_CHARS + " characters for line hashing");
+        }
+
+        String[] lines = text.split("\\R", -1);
+        if (lines.length > MAX_LINES) {
+            throw new JobHandlerException("Input exceeds limit of " + MAX_LINES + " lines");
+        }
+
+        for (int i = 0; i < lines.length; i++) {
+            if (lines[i].length() > MAX_LINE_CHARS) {
+                throw new JobHandlerException(
+                        "Line " + (i + 1) + " exceeds limit of " + MAX_LINE_CHARS + " characters");
+            }
+        }
     }
 
     private String computeHash(String text, String algorithm) throws Exception {

@@ -6,26 +6,12 @@ import {
   TextField,
 } from '@mui/material';
 
-const HTTP_PRESETS = [
-  { label: 'GitHub — FlowForge repo', url: 'https://api.github.com/repos/ShayaanSadiq/FlowForge', method: 'GET' },
-  { label: 'JSONPlaceholder — sample post', url: 'https://jsonplaceholder.typicode.com/posts/1', method: 'GET' },
-  { label: 'Open-Meteo — Toronto weather', url: 'https://api.open-meteo.com/v1/forecast?latitude=43.65&longitude=-79.38&current_weather=true', method: 'GET' },
-  { label: 'REST Countries — Canada', url: 'https://restcountries.com/v3.1/name/canada', method: 'GET' },
-  { label: 'HTTPBin — POST echo', url: 'https://httpbin.org/post', method: 'POST', body: '{"message":"hello from FlowForge"}' },
-];
-
-const DATA_TRANSFORM_OPS = [
-  { value: 'uppercase', label: 'Uppercase' },
-  { value: 'lowercase', label: 'Lowercase' },
-  { value: 'trim', label: 'Trim whitespace' },
-  { value: 'reverse', label: 'Reverse text' },
-  { value: 'slugify', label: 'Slugify (URL-friendly)' },
-  { value: 'normalize_whitespace', label: 'Normalize whitespace' },
-  { value: 'sort_lines', label: 'Sort lines' },
-  { value: 'dedupe_lines', label: 'Dedupe lines' },
-  { value: 'replace', label: 'Find & replace' },
-  { value: 'extract_field', label: 'Extract JSON field' },
-];
+const HASH_LIMITS = {
+  singleChars: 100_000,
+  linesModeChars: 200_000,
+  maxLines: 500,
+  maxLineChars: 10_000,
+};
 
 export const DEFAULT_FORM_STATE = {
   PYTHON_SCRIPT: {
@@ -33,12 +19,6 @@ export const DEFAULT_FORM_STATE = {
 
 for i in range(3):
     print(f"step {i}")`,
-  },
-  HTTP_REQUEST: {
-    preset: '',
-    url: 'https://api.github.com/repos/ShayaanSadiq/FlowForge',
-    method: 'GET',
-    body: '',
   },
   JSON_FORMAT: {
     json: `{
@@ -51,14 +31,6 @@ for i in range(3):
 Alice,alice@example.com,92
 Bob,bob@example.com,
 Carol,carol@example.com,88`,
-  },
-  DATA_TRANSFORM: {
-    operation: 'slugify',
-    text: 'Hello FlowForge Jobs!',
-    find: '',
-    replaceWith: '',
-    json: '{\n  "user": {\n    "name": "Alice",\n    "role": "admin"\n  }\n}',
-    field: 'user.name',
   },
   HASH_GENERATE: {
     text: 'password-to-hash',
@@ -80,31 +52,10 @@ export function buildPayload(type, form) {
   switch (type) {
     case 'PYTHON_SCRIPT':
       return form.code;
-    case 'HTTP_REQUEST': {
-      const payload = { url: form.url.trim(), method: form.method };
-      if (form.method === 'POST' && form.body.trim()) {
-        payload.body = form.body;
-      }
-      return JSON.stringify(payload);
-    }
     case 'JSON_FORMAT':
       return form.json.trim();
     case 'CSV_ANALYZE':
       return form.csv;
-    case 'DATA_TRANSFORM': {
-      const payload = { operation: form.operation };
-      if (form.operation === 'extract_field') {
-        payload.json = form.json;
-        payload.field = form.field.trim();
-      } else {
-        payload.text = form.text;
-        if (form.operation === 'replace') {
-          payload.find = form.find;
-          payload.replaceWith = form.replaceWith;
-        }
-      }
-      return JSON.stringify(payload);
-    }
     case 'HASH_GENERATE': {
       const payload = {
         text: form.text,
@@ -128,6 +79,10 @@ export function buildPayload(type, form) {
 
 const monoFieldSx = { '& textarea, & input': { fontFamily: 'monospace', fontSize: 13 } };
 
+const hashHelperText = `Single string: up to ${HASH_LIMITS.singleChars.toLocaleString()} chars. `
+  + `Line mode: up to ${HASH_LIMITS.maxLines} lines, ${HASH_LIMITS.maxLineChars.toLocaleString()} chars per line, `
+  + `${HASH_LIMITS.linesModeChars.toLocaleString()} chars total.`;
+
 export default function JobPayloadForm({ type, form, onChange }) {
   const setField = (field, value) => onChange({ ...form, [field]: value });
 
@@ -146,74 +101,6 @@ export default function JobPayloadForm({ type, form, onChange }) {
           helperText="Python 3 code. stdout becomes the job result. Timeout: 30s."
           sx={monoFieldSx}
         />
-      );
-
-    case 'HTTP_REQUEST':
-      return (
-        <>
-          <FormControl fullWidth margin="normal">
-            <InputLabel id="http-preset-label">Quick example (optional)</InputLabel>
-            <Select
-              labelId="http-preset-label"
-              label="Quick example (optional)"
-              value={form.preset}
-              onChange={(e) => {
-                const preset = HTTP_PRESETS.find((item) => item.label === e.target.value);
-                if (preset) {
-                  onChange({
-                    preset: preset.label,
-                    url: preset.url,
-                    method: preset.method,
-                    body: preset.body || '',
-                  });
-                } else {
-                  setField('preset', '');
-                }
-              }}
-            >
-              <MenuItem value="">Custom request</MenuItem>
-              {HTTP_PRESETS.map((preset) => (
-                <MenuItem key={preset.label} value={preset.label}>{preset.label}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <TextField
-            fullWidth
-            label="URL"
-            value={form.url}
-            onChange={(e) => setField('url', e.target.value)}
-            margin="normal"
-            required
-            helperText="Public http/https URLs only. Private/local hosts are blocked."
-            sx={monoFieldSx}
-          />
-          <FormControl fullWidth margin="normal">
-            <InputLabel id="http-method-label">Method</InputLabel>
-            <Select
-              labelId="http-method-label"
-              label="Method"
-              value={form.method}
-              onChange={(e) => setField('method', e.target.value)}
-            >
-              <MenuItem value="GET">GET</MenuItem>
-              <MenuItem value="POST">POST</MenuItem>
-              <MenuItem value="HEAD">HEAD</MenuItem>
-            </Select>
-          </FormControl>
-          {form.method === 'POST' && (
-            <TextField
-              fullWidth
-              label="Request body (optional)"
-              value={form.body}
-              onChange={(e) => setField('body', e.target.value)}
-              margin="normal"
-              multiline
-              rows={6}
-              helperText="Sent as JSON when non-empty."
-              sx={monoFieldSx}
-            />
-          )}
-        </>
       );
 
     case 'JSON_FORMAT':
@@ -248,85 +135,6 @@ export default function JobPayloadForm({ type, form, onChange }) {
         />
       );
 
-    case 'DATA_TRANSFORM':
-      return (
-        <>
-          <FormControl fullWidth margin="normal">
-            <InputLabel id="transform-op-label">Operation</InputLabel>
-            <Select
-              labelId="transform-op-label"
-              label="Operation"
-              value={form.operation}
-              onChange={(e) => setField('operation', e.target.value)}
-            >
-              {DATA_TRANSFORM_OPS.map((op) => (
-                <MenuItem key={op.value} value={op.value}>{op.label}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          {form.operation === 'extract_field' ? (
-            <>
-              <TextField
-                fullWidth
-                label="JSON document"
-                value={form.json}
-                onChange={(e) => setField('json', e.target.value)}
-                margin="normal"
-                multiline
-                rows={8}
-                required
-                sx={monoFieldSx}
-              />
-              <TextField
-                fullWidth
-                label="Field path"
-                value={form.field}
-                onChange={(e) => setField('field', e.target.value)}
-                margin="normal"
-                required
-                helperText='Dot-separated path, e.g. user.name or features.0'
-                sx={monoFieldSx}
-              />
-            </>
-          ) : (
-            <>
-              <TextField
-                fullWidth
-                label="Text"
-                value={form.text}
-                onChange={(e) => setField('text', e.target.value)}
-                margin="normal"
-                multiline
-                rows={6}
-                required
-                sx={monoFieldSx}
-              />
-              {form.operation === 'replace' && (
-                <>
-                  <TextField
-                    fullWidth
-                    label="Find"
-                    value={form.find}
-                    onChange={(e) => setField('find', e.target.value)}
-                    margin="normal"
-                    required
-                    sx={monoFieldSx}
-                  />
-                  <TextField
-                    fullWidth
-                    label="Replace with"
-                    value={form.replaceWith}
-                    onChange={(e) => setField('replaceWith', e.target.value)}
-                    margin="normal"
-                    sx={monoFieldSx}
-                  />
-                </>
-              )}
-            </>
-          )}
-        </>
-      );
-
     case 'HASH_GENERATE':
       return (
         <>
@@ -339,6 +147,10 @@ export default function JobPayloadForm({ type, form, onChange }) {
             multiline
             rows={form.mode === 'lines' ? 8 : 3}
             required
+            helperText={hashHelperText}
+            inputProps={{
+              maxLength: form.mode === 'lines' ? HASH_LIMITS.linesModeChars : HASH_LIMITS.singleChars,
+            }}
             sx={monoFieldSx}
           />
           <FormControl fullWidth margin="normal">
