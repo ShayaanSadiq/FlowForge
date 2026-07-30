@@ -24,6 +24,20 @@ export async function apiRequest(path, options = {}) {
   return response.json();
 }
 
+function normalizePageResponse(page) {
+  if (!page || !page.page) {
+    return page;
+  }
+
+  return {
+    content: page.content,
+    totalElements: page.page.totalElements,
+    totalPages: page.page.totalPages,
+    number: page.page.number,
+    size: page.page.size,
+  };
+}
+
 export const authApi = {
   login: (data) => apiRequest('/api/auth/login', { method: 'POST', body: JSON.stringify(data) }),
   register: (data) => apiRequest('/api/auth/register', { method: 'POST', body: JSON.stringify(data) }),
@@ -42,7 +56,7 @@ export const jobsApi = {
     if (type && type !== 'ALL') {
       params.set('type', type);
     }
-    return apiRequest(`/api/jobs?${params}`);
+    return apiRequest(`/api/jobs?${params}`).then(normalizePageResponse);
   },
   get: (id) => apiRequest(`/api/jobs/${id}`),
   create: (data) => apiRequest('/api/jobs', { method: 'POST', body: JSON.stringify(data) }),
