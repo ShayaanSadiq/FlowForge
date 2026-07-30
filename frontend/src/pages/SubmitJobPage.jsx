@@ -10,6 +10,7 @@ import {
   Typography,
 } from '@mui/material';
 import { jobsApi } from '../api/client';
+import JobPayloadForm, { buildPayload, getDefaultFormState } from '../components/JobPayloadForm';
 
 const JOB_TYPES = [
   { value: 'PYTHON_SCRIPT', label: 'Python Script' },
@@ -21,59 +22,16 @@ const JOB_TYPES = [
   { value: 'BASE64_CODEC', label: 'Base64 Encode/Decode' },
 ];
 
-const EXAMPLES = {
-  PYTHON_SCRIPT: `print("Hello from FlowForge")
-
-for i in range(3):
-    print(f"step {i}")`,
-  HTTP_REQUEST: `{
-  "url": "https://api.github.com",
-  "method": "GET"
-}`,
-  JSON_FORMAT: `{
-  "name": "FlowForge",
-  "features": ["jobs", "worker", "mongodb"]
-}`,
-  CSV_ANALYZE: `name,email,score
-Alice,alice@example.com,92
-Bob,bob@example.com,
-Carol,carol@example.com,88`,
-  DATA_TRANSFORM: `{
-  "operation": "slugify",
-  "text": "Hello FlowForge Jobs!"
-}`,
-  HASH_GENERATE: `{
-  "text": "password-to-hash",
-  "algorithm": "SHA-256"
-}`,
-  BASE64_CODEC: `{
-  "operation": "encode",
-  "text": "Hello FlowForge"
-}`,
-};
-
-const HELPERS = {
-  PYTHON_SCRIPT: 'Paste Python 3 code. stdout becomes the job result. Timeout: 30s.',
-  HTTP_REQUEST: 'JSON with url, method (GET/POST/HEAD), optional body. Public URLs only.',
-  JSON_FORMAT: 'Paste raw JSON or {"json": "..."}. Validates and pretty-prints.',
-  CSV_ANALYZE: 'Paste CSV text. Returns row/column stats and fill rates.',
-  DATA_TRANSFORM: 'JSON with operation + text. Ops: uppercase, lowercase, trim, reverse, slugify, normalize_whitespace, sort_lines, dedupe_lines, replace, extract_field.',
-  HASH_GENERATE: 'JSON with text + algorithm (SHA-256/512). Optional mode: "lines" or expected hash verification.',
-  BASE64_CODEC: 'JSON: operation (encode/decode) and text.',
-};
-
-const MULTILINE_TYPES = new Set(['PYTHON_SCRIPT', 'JSON_FORMAT', 'CSV_ANALYZE', 'DATA_TRANSFORM', 'HASH_GENERATE', 'BASE64_CODEC', 'HTTP_REQUEST']);
-
 export default function SubmitJobPage() {
   const [type, setType] = useState('PYTHON_SCRIPT');
-  const [payload, setPayload] = useState('');
+  const [form, setForm] = useState(() => getDefaultFormState('PYTHON_SCRIPT'));
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleTypeChange = (newType) => {
     setType(newType);
-    setPayload(EXAMPLES[newType] || '');
+    setForm(getDefaultFormState(newType));
   };
 
   const handleSubmit = async (e) => {
@@ -81,6 +39,7 @@ export default function SubmitJobPage() {
     setError('');
     setLoading(true);
     try {
+      const payload = buildPayload(type, form);
       const job = await jobsApi.create({ type, payload });
       navigate(`/jobs/${job.id}`);
     } catch (err) {
@@ -108,19 +67,7 @@ export default function SubmitJobPage() {
               <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
             ))}
           </TextField>
-          <TextField
-            fullWidth
-            label="Payload"
-            value={payload}
-            onChange={(e) => setPayload(e.target.value)}
-            margin="normal"
-            multiline
-            rows={MULTILINE_TYPES.has(type) ? 10 : 6}
-            required
-            placeholder={EXAMPLES[type]}
-            helperText={HELPERS[type]}
-            sx={{ '& textarea': { fontFamily: 'monospace', fontSize: 13 } }}
-          />
+          <JobPayloadForm type={type} form={form} onChange={setForm} />
           <Button type="submit" variant="contained" sx={{ mt: 2 }} disabled={loading}>
             {loading ? 'Submitting...' : 'Submit Job'}
           </Button>
