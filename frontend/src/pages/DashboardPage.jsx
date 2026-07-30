@@ -23,6 +23,7 @@ import {
 } from '@mui/material';
 import { jobsApi, statsApi } from '../api/client';
 import StatusBadge from '../components/StatusBadge';
+import { formatScheduledAt } from '../components/JobScheduleForm';
 
 const PAGE_SIZE_OPTIONS = [20, 50, 100];
 
@@ -126,6 +127,7 @@ export default function DashboardPage() {
               <TableCell>ID</TableCell>
               <TableCell>Type</TableCell>
               <TableCell>Status</TableCell>
+              <TableCell>Runs at</TableCell>
               <TableCell>Attempts</TableCell>
               <TableCell>Created</TableCell>
               <TableCell />
@@ -134,13 +136,14 @@ export default function DashboardPage() {
           <TableBody>
             {jobs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} align="center">No jobs yet. Submit your first job.</TableCell>
+                <TableCell colSpan={7} align="center">No jobs yet. Submit your first job.</TableCell>
               </TableRow>
             ) : jobs.map((job) => (
               <TableRow key={job.id} hover>
                 <TableCell sx={{ fontFamily: 'monospace', fontSize: 12 }}>{job.id?.slice(-8)}</TableCell>
                 <TableCell>{job.type}</TableCell>
-                <TableCell><StatusBadge status={job.status} /></TableCell>
+                <TableCell><StatusBadge status={job.status} scheduledAt={job.scheduledAt} /></TableCell>
+                <TableCell>{formatScheduledAt(job.scheduledAt)}</TableCell>
                 <TableCell>{job.attempts}/{job.maxAttempts}</TableCell>
                 <TableCell>{job.createdAt ? new Date(job.createdAt).toLocaleString() : '-'}</TableCell>
                 <TableCell>

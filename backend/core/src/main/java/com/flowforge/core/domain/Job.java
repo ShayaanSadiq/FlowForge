@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -19,6 +20,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Document(collection = "jobs")
+@CompoundIndex(name = "status_scheduledAt_idx", def = "{ 'status': 1, 'scheduledAt': 1 }")
 public class Job {
 
     @Id
@@ -57,4 +59,8 @@ public class Job {
     private Instant startedAt;
 
     private Instant finishedAt;
+
+    /** When the worker should pick up this job. Defaults to immediate execution. */
+    @Indexed
+    private Instant scheduledAt;
 }

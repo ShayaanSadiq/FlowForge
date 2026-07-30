@@ -6,6 +6,7 @@ Cloud-native async job processing platform built with **Spring Boot**, **React**
 
 - JWT authentication (register / login)
 - Submit async jobs via REST API (`POST /api/jobs`)
+- Schedule jobs with a delay (seconds) or a specific run time — queued until due
 - Background worker with job state machine: `PENDING → RUNNING → SUCCEEDED | FAILED → DEAD_LETTER`
 - Automatic retries (up to 3 attempts) with dead-letter queue
 - Job types: Python Script, JSON Format, CSV Analyze, Hash Generate, Base64 Codec

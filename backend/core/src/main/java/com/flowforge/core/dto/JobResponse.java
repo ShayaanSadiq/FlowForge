@@ -22,6 +22,7 @@ public class JobResponse {
     private String result;
     private String errorMessage;
     private Instant createdAt;
+    private Instant scheduledAt;
     private Instant startedAt;
     private Instant finishedAt;
 }

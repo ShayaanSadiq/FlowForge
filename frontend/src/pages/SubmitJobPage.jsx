@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import { jobsApi } from '../api/client';
 import JobPayloadForm, { buildPayload, getDefaultFormState } from '../components/JobPayloadForm';
+import JobScheduleForm, { buildScheduleFields, getDefaultScheduleState } from '../components/JobScheduleForm';
 
 const JOB_TYPES = [
   { value: 'PYTHON_SCRIPT', label: 'Python Script' },
@@ -23,6 +24,7 @@ const JOB_TYPES = [
 export default function SubmitJobPage() {
   const [type, setType] = useState('PYTHON_SCRIPT');
   const [form, setForm] = useState(() => getDefaultFormState('PYTHON_SCRIPT'));
+  const [schedule, setSchedule] = useState(getDefaultScheduleState);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -38,7 +40,8 @@ export default function SubmitJobPage() {
     setLoading(true);
     try {
       const payload = buildPayload(type, form);
-      const job = await jobsApi.create({ type, payload });
+      const scheduleFields = buildScheduleFields(schedule);
+      const job = await jobsApi.create({ type, payload, ...scheduleFields });
       navigate(`/jobs/${job.id}`);
     } catch (err) {
       setError(err.message);
@@ -66,6 +69,7 @@ export default function SubmitJobPage() {
             ))}
           </TextField>
           <JobPayloadForm type={type} form={form} onChange={setForm} />
+          <JobScheduleForm schedule={schedule} onChange={setSchedule} />
           <Button type="submit" variant="contained" sx={{ mt: 2 }} disabled={loading}>
             {loading ? 'Submitting...' : 'Submit Job'}
           </Button>

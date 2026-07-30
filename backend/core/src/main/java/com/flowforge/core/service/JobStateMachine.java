@@ -34,6 +34,7 @@ public class JobStateMachine {
 
         job.setStatus(JobStatus.PENDING);
         job.setStartedAt(null);
+        job.setScheduledAt(java.time.Instant.now());
         return JobStatus.PENDING;
     }
 

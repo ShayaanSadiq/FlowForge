@@ -9,6 +9,7 @@ import {
 } from '@mui/material';
 import { jobsApi } from '../api/client';
 import StatusBadge from '../components/StatusBadge';
+import { formatScheduledAt, isJobScheduled } from '../components/JobScheduleForm';
 
 const PRE_BLOCK_SX = {
   bgcolor: 'background.default',
@@ -68,7 +69,7 @@ export default function JobDetailPage() {
         <>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
             <Typography variant="h4" fontWeight={700}>Job Detail</Typography>
-            <StatusBadge status={job.status} />
+            <StatusBadge status={job.status} scheduledAt={job.scheduledAt} />
             {(job.status === 'FAILED' || job.status === 'DEAD_LETTER') && (
               <Button variant="outlined" onClick={handleRetry}>Retry</Button>
             )}
@@ -83,6 +84,14 @@ export default function JobDetailPage() {
             <Box component="pre" sx={{ ...PRE_BLOCK_SX, mb: 2 }}>{job.payload}</Box>
             <Typography variant="body2" color="text.secondary">Attempts</Typography>
             <Typography sx={{ mb: 2 }}>{job.attempts} / {job.maxAttempts}</Typography>
+            <Typography variant="body2" color="text.secondary">Scheduled for</Typography>
+            <Typography sx={{ mb: 2 }}>
+              {isJobScheduled(job.status, job.scheduledAt)
+                ? formatScheduledAt(job.scheduledAt)
+                : job.scheduledAt
+                  ? `${formatScheduledAt(job.scheduledAt)} (ready)`
+                  : 'Immediately'}
+            </Typography>
             {job.result && (
               <>
                 <Typography variant="body2" color="text.secondary">Result</Typography>

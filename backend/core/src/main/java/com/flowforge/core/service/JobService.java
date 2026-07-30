@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.NoSuchElementException;
 
 @Service
@@ -29,6 +30,7 @@ public class JobService {
                 .type(request.getType())
                 .payload(request.getPayload())
                 .status(JobStatus.PENDING)
+                .scheduledAt(JobScheduling.resolveScheduledAt(request))
                 .build();
 
         Job saved = jobRepository.save(job);
@@ -57,6 +59,7 @@ public class JobService {
 
         job.setStatus(JobStatus.PENDING);
         job.setAttempts(0);
+        job.setScheduledAt(Instant.now());
         job.setErrorMessage(null);
         job.setResult(null);
         job.setStartedAt(null);
@@ -80,6 +83,7 @@ public class JobService {
                 .result(job.getResult())
                 .errorMessage(job.getErrorMessage())
                 .createdAt(job.getCreatedAt())
+                .scheduledAt(job.getScheduledAt())
                 .startedAt(job.getStartedAt())
                 .finishedAt(job.getFinishedAt())
                 .build();

@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Instant;
 import java.util.Map;
 
 @RestController
@@ -18,8 +19,12 @@ public class StatsController {
 
     @GetMapping
     public Map<String, Long> getStats() {
+        Instant now = Instant.now();
+        long pending = jobRepository.countByStatus(JobStatus.PENDING);
+        long scheduled = jobRepository.countByStatusAndScheduledAtAfter(JobStatus.PENDING, now);
         return Map.of(
-                "pending", jobRepository.countByStatus(JobStatus.PENDING),
+                "pending", pending - scheduled,
+                "scheduled", scheduled,
                 "running", jobRepository.countByStatus(JobStatus.RUNNING),
                 "succeeded", jobRepository.countByStatus(JobStatus.SUCCEEDED),
                 "failed", jobRepository.countByStatus(JobStatus.FAILED),

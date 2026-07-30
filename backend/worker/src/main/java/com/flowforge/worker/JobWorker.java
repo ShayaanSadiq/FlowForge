@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.List;
 
 @Slf4j
@@ -27,7 +28,8 @@ public class JobWorker {
 
     @Scheduled(fixedDelayString = "${flowforge.worker.poll-interval-ms:2000}")
     public void pollAndProcessJobs() {
-        List<Job> pendingJobs = jobRepository.findTop10ByStatusOrderByCreatedAtAsc(JobStatus.PENDING);
+        List<Job> pendingJobs = jobRepository.findTop10ReadyJobsOrderByScheduledAtAscCreatedAtAsc(
+                JobStatus.PENDING, Instant.now());
 
         for (Job job : pendingJobs.stream().limit(batchSize).toList()) {
             processJob(job);
