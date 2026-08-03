@@ -1,3 +1,5 @@
+import { normalizePageResponse, parseApiError } from './utils/apiUtils.js';
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
 export function getAuthHeaders() {
@@ -17,25 +19,11 @@ export async function apiRequest(path, options = {}) {
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: response.statusText }));
-    throw new Error(error.detail || 'Request failed');
+    throw new Error(parseApiError(error, response.statusText));
   }
 
   if (response.status === 204) return null;
   return response.json();
-}
-
-function normalizePageResponse(page) {
-  if (!page || !page.page) {
-    return page;
-  }
-
-  return {
-    content: page.content,
-    totalElements: page.page.totalElements,
-    totalPages: page.page.totalPages,
-    number: page.page.number,
-    size: page.page.size,
-  };
 }
 
 export const authApi = {

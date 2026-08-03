@@ -33,8 +33,9 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Install and build frontend
+      - name: Install, test, and build frontend
         working-directory: frontend
         run: |
           npm install
+          npm test
           npm run build
