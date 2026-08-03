@@ -1,4 +1,4 @@
-import { normalizePageResponse, parseApiError } from './utils/apiUtils.js';
+import { normalizePageResponse, parseApiError } from '../utils/apiUtils.js';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
