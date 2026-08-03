@@ -26,6 +26,14 @@ const PRE_BLOCK_SX = {
   m: 0,
 };
 
+const SUPPORTED_DUPLICATE_TYPES = new Set([
+  'PYTHON_SCRIPT',
+  'JSON_FORMAT',
+  'CSV_ANALYZE',
+  'HASH_GENERATE',
+  'BASE64_CODEC',
+]);
+
 export default function JobDetailPage() {
   const { jobId } = useParams();
   const [job, setJob] = useState(null);
@@ -57,6 +65,20 @@ export default function JobDetailPage() {
     }
   };
 
+  const handleSubmitSimilar = () => {
+    if (!job || !SUPPORTED_DUPLICATE_TYPES.has(job.type)) {
+      return;
+    }
+    navigate('/jobs/new', {
+      state: {
+        duplicate: {
+          type: job.type,
+          payload: job.payload,
+        },
+      },
+    });
+  };
+
   if (!job && !error) {
     return <Typography>Loading job...</Typography>;
   }
@@ -67,9 +89,12 @@ export default function JobDetailPage() {
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {job && (
         <>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3, flexWrap: 'wrap' }}>
             <Typography variant="h4" fontWeight={700}>Job Detail</Typography>
             <StatusBadge status={job.status} scheduledAt={job.scheduledAt} />
+            {SUPPORTED_DUPLICATE_TYPES.has(job.type) && (
+              <Button variant="outlined" onClick={handleSubmitSimilar}>Submit similar job</Button>
+            )}
             {(job.status === 'FAILED' || job.status === 'DEAD_LETTER') && (
               <Button variant="outlined" onClick={handleRetry}>Retry</Button>
             )}

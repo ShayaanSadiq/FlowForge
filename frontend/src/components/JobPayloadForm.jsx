@@ -48,6 +48,40 @@ export function getDefaultFormState(type) {
   return structuredClone(DEFAULT_FORM_STATE[type] || {});
 }
 
+export function parsePayloadToForm(type, payload) {
+  switch (type) {
+    case 'PYTHON_SCRIPT':
+      return { code: payload };
+    case 'JSON_FORMAT':
+      return { json: payload };
+    case 'CSV_ANALYZE':
+      return { csv: payload };
+    case 'HASH_GENERATE': {
+      const defaults = getDefaultFormState('HASH_GENERATE');
+      const trimmed = payload.trim();
+      if (!trimmed.startsWith('{')) {
+        return { ...defaults, text: trimmed };
+      }
+      const config = JSON.parse(trimmed);
+      return {
+        text: config.text ?? '',
+        algorithm: config.algorithm ?? 'SHA-256',
+        mode: config.mode ?? 'single',
+        expected: config.expected ?? '',
+      };
+    }
+    case 'BASE64_CODEC': {
+      const config = JSON.parse(payload);
+      return {
+        operation: config.operation ?? 'encode',
+        text: config.text ?? '',
+      };
+    }
+    default:
+      return getDefaultFormState(type);
+  }
+}
+
 export function buildPayload(type, form) {
   switch (type) {
     case 'PYTHON_SCRIPT':

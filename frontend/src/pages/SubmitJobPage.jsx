@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Alert,
   Box,
@@ -10,7 +10,7 @@ import {
   Typography,
 } from '@mui/material';
 import { jobsApi } from '../api/client';
-import JobPayloadForm, { buildPayload, getDefaultFormState } from '../components/JobPayloadForm';
+import JobPayloadForm, { buildPayload, getDefaultFormState, parsePayloadToForm } from '../components/JobPayloadForm';
 import JobScheduleForm, { buildScheduleFields, getDefaultScheduleState } from '../components/JobScheduleForm';
 
 const JOB_TYPES = [
@@ -21,10 +21,43 @@ const JOB_TYPES = [
   { value: 'BASE64_CODEC', label: 'Base64 Encode/Decode' },
 ];
 
+const SUPPORTED_TYPES = new Set(JOB_TYPES.map((option) => option.value));
+
+function readInitialState(location) {
+  const duplicate = location.state?.duplicate;
+  if (!duplicate?.type || !SUPPORTED_TYPES.has(duplicate.type)) {
+    return {
+      type: 'PYTHON_SCRIPT',
+      form: getDefaultFormState('PYTHON_SCRIPT'),
+      schedule: getDefaultScheduleState(),
+      fromDuplicate: false,
+    };
+  }
+
+  try {
+    return {
+      type: duplicate.type,
+      form: parsePayloadToForm(duplicate.type, duplicate.payload ?? ''),
+      schedule: getDefaultScheduleState(),
+      fromDuplicate: true,
+    };
+  } catch {
+    return {
+      type: duplicate.type,
+      form: getDefaultFormState(duplicate.type),
+      schedule: getDefaultScheduleState(),
+      fromDuplicate: true,
+    };
+  }
+}
+
 export default function SubmitJobPage() {
-  const [type, setType] = useState('PYTHON_SCRIPT');
-  const [form, setForm] = useState(() => getDefaultFormState('PYTHON_SCRIPT'));
-  const [schedule, setSchedule] = useState(getDefaultScheduleState);
+  const location = useLocation();
+  const initial = readInitialState(location);
+  const [type, setType] = useState(initial.type);
+  const [form, setForm] = useState(initial.form);
+  const [schedule, setSchedule] = useState(initial.schedule);
+  const [fromDuplicate] = useState(initial.fromDuplicate);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -54,6 +87,11 @@ export default function SubmitJobPage() {
     <Box>
       <Typography variant="h4" fontWeight={700} gutterBottom>Submit New Job</Typography>
       <Paper sx={{ p: 3, maxWidth: 720 }}>
+        {fromDuplicate && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            Form pre-filled from a previous job. Adjust anything you need before submitting.
+          </Alert>
+        )}
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <Box component="form" onSubmit={handleSubmit}>
           <TextField
