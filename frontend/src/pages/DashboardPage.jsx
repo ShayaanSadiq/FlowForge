@@ -122,6 +122,16 @@ export default function DashboardPage() {
     setPage(0);
   };
 
+  const hasActiveFilters =
+    statusFilter !== 'ALL' || typeFilter !== 'ALL' || sort !== 'createdAt,desc';
+
+  const handleClearFilters = () => {
+    setStatusFilter('ALL');
+    setTypeFilter('ALL');
+    setSort('createdAt,desc');
+    setPage(0);
+  };
+
   const rangeStart = totalJobs === 0 ? 0 : page * pageSize + 1;
   const rangeEnd = Math.min((page + 1) * pageSize, totalJobs);
 
@@ -195,6 +205,16 @@ export default function DashboardPage() {
             </FormControl>
           </Grid>
         </Grid>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={handleClearFilters}
+            disabled={!hasActiveFilters}
+          >
+            Clear filters
+          </Button>
+        </Box>
       </Paper>
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 2 }}>
