@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import {
-  Alert,
   Box,
   Button,
   Link,
@@ -11,26 +10,26 @@ import {
 } from '@mui/material';
 import { authApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 
 export default function RegisterPage() {
   const [form, setForm] = useState({ email: '', password: '', displayName: '' });
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   const handleChange = (field) => (e) => setForm({ ...form, [field]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
     try {
       const response = await authApi.register(form);
       login(response);
       navigate('/');
     } catch (err) {
-      setError(err.message);
+      showToast(err.message, 'error');
     } finally {
       setLoading(false);
     }
@@ -40,7 +39,6 @@ export default function RegisterPage() {
     <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
       <Paper sx={{ p: 4, width: '100%', maxWidth: 420 }}>
         <Typography variant="h4" gutterBottom fontWeight={700}>Create Account</Typography>
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <Box component="form" onSubmit={handleSubmit}>
           <TextField fullWidth label="Display Name" margin="normal" value={form.displayName} onChange={handleChange('displayName')} required />
           <TextField fullWidth label="Email" type="email" margin="normal" value={form.email} onChange={handleChange('email')} required />

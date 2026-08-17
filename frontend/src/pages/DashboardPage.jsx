@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import {
-  Alert,
   Box,
   Button,
   Card,
@@ -24,6 +23,7 @@ import {
 import { jobsApi, statsApi } from '../api/client';
 import StatusBadge from '../components/StatusBadge';
 import { formatScheduledAt } from '../components/JobScheduleForm';
+import { useToast } from '../context/ToastContext';
 
 const PAGE_SIZE_OPTIONS = [20, 50, 100];
 
@@ -54,7 +54,6 @@ const SORT_OPTIONS = [
 export default function DashboardPage() {
   const [jobs, setJobs] = useState([]);
   const [stats, setStats] = useState(null);
-  const [error, setError] = useState('');
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -62,6 +61,8 @@ export default function DashboardPage() {
   const [sort, setSort] = useState('createdAt,desc');
   const [totalJobs, setTotalJobs] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const { showToast } = useToast();
+  const lastErrorRef = useRef('');
 
   const loadData = useCallback(async () => {
     try {
@@ -86,11 +87,14 @@ export default function DashboardPage() {
       setTotalJobs(jobsPage.totalElements ?? 0);
       setTotalPages(pages);
       setStats(statsData);
-      setError('');
+      lastErrorRef.current = '';
     } catch (err) {
-      setError(err.message);
+      if (err.message !== lastErrorRef.current) {
+        lastErrorRef.current = err.message;
+        showToast(err.message, 'error');
+      }
     }
-  }, [page, pageSize, statusFilter, typeFilter, sort]);
+  }, [page, pageSize, statusFilter, typeFilter, sort, showToast]);
 
   useEffect(() => {
     loadData();
@@ -141,8 +145,6 @@ export default function DashboardPage() {
         <Typography variant="h4" fontWeight={700}>Job Dashboard</Typography>
         <Button component={RouterLink} to="/jobs/new" variant="contained">Submit Job</Button>
       </Box>
-
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {stats && Object.entries(stats).map(([key, value]) => (
