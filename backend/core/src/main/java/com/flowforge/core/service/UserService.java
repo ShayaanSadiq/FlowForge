@@ -8,6 +8,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import static com.flowforge.core.util.UserFacingMessages.EMAIL_TAKEN;
+import static com.flowforge.core.util.UserFacingMessages.INVALID_CREDENTIALS;
+import static com.flowforge.core.util.UserFacingMessages.USER_NOT_FOUND;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -18,7 +22,7 @@ public class UserService {
 
     public User register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email already registered");
+            throw new IllegalArgumentException(EMAIL_TAKEN);
         }
 
         User user = User.builder()
@@ -34,10 +38,10 @@ public class UserService {
 
     public User authenticate(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail().toLowerCase())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
+                .orElseThrow(() -> new IllegalArgumentException(INVALID_CREDENTIALS));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new IllegalArgumentException("Invalid credentials");
+            throw new IllegalArgumentException(INVALID_CREDENTIALS);
         }
 
         auditService.log(user.getId(), "LOGIN", "USER", user.getId(), "User logged in");
@@ -46,6 +50,6 @@ public class UserService {
 
     public User findById(String userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new IllegalArgumentException(USER_NOT_FOUND));
     }
 }

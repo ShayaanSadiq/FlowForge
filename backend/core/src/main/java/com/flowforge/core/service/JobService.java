@@ -14,6 +14,11 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.NoSuchElementException;
 
+import static com.flowforge.core.util.UserFacingMessages.JOB_NOT_FOUND;
+import static com.flowforge.core.util.UserFacingMessages.RETRY_NOT_ALLOWED;
+import static com.flowforge.core.util.UserFacingMessages.deprecatedJobType;
+import static com.flowforge.core.util.UserFacingMessages.unsupportedStatusFilter;
+
 @Service
 @RequiredArgsConstructor
 public class JobService {
@@ -23,7 +28,7 @@ public class JobService {
 
     public JobResponse createJob(String userId, CreateJobRequest request) {
         if (request.getType() != null && request.getType().isDeprecated()) {
-            throw new IllegalArgumentException("Job type " + request.getType() + " is no longer supported");
+            throw new IllegalArgumentException(deprecatedJobType(request.getType().name()));
         }
 
         Job job = Job.builder()
@@ -59,7 +64,7 @@ public class JobService {
             try {
                 status = JobStatus.valueOf(statusFilter.toUpperCase());
             } catch (IllegalArgumentException ex) {
-                throw new IllegalArgumentException("Unsupported status filter: " + statusFilter);
+                throw new IllegalArgumentException(unsupportedStatusFilter(statusFilter));
             }
             return hasType
                     ? jobRepository.findByUserIdAndStatusAndType(userId, status, type, pageable)
@@ -73,16 +78,16 @@ public class JobService {
 
     public JobResponse getJob(String userId, String jobId) {
         Job job = jobRepository.findByIdAndUserId(jobId, userId)
-                .orElseThrow(() -> new NoSuchElementException("Job not found"));
+                .orElseThrow(() -> new NoSuchElementException(JOB_NOT_FOUND));
         return toResponse(job);
     }
 
     public JobResponse retryJob(String userId, String jobId) {
         Job job = jobRepository.findByIdAndUserId(jobId, userId)
-                .orElseThrow(() -> new NoSuchElementException("Job not found"));
+                .orElseThrow(() -> new NoSuchElementException(JOB_NOT_FOUND));
 
         if (job.getStatus() != JobStatus.FAILED && job.getStatus() != JobStatus.DEAD_LETTER) {
-            throw new IllegalStateException("Only failed or dead-letter jobs can be retried");
+            throw new IllegalStateException(RETRY_NOT_ALLOWED);
         }
 
         job.setStatus(JobStatus.PENDING);

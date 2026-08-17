@@ -97,6 +97,6 @@ class JobServiceTest {
 
         assertThatThrownBy(() -> jobService.listJobs("user-1", "NOT_A_STATUS", null, pageable))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Unsupported status filter");
+                .hasMessageContaining("Unknown status filter");
     }
 }

@@ -4,6 +4,12 @@ import com.flowforge.core.dto.CreateJobRequest;
 
 import java.time.Instant;
 
+import static com.flowforge.core.util.UserFacingMessages.SCHEDULE_BOTH_FIELDS;
+import static com.flowforge.core.util.UserFacingMessages.SCHEDULE_NEGATIVE_DELAY;
+import static com.flowforge.core.util.UserFacingMessages.SCHEDULE_PAST_TIME;
+import static com.flowforge.core.util.UserFacingMessages.scheduleDelayTooLong;
+import static com.flowforge.core.util.UserFacingMessages.scheduleTooFarAhead;
+
 public final class JobScheduling {
 
     public static final int MAX_DELAY_SECONDS = 7 * 24 * 60 * 60;
@@ -17,16 +23,16 @@ public final class JobScheduling {
         boolean hasScheduledAt = request.getScheduledAt() != null;
 
         if (hasDelay && hasScheduledAt) {
-            throw new IllegalArgumentException("Provide either delaySeconds or scheduledAt, not both");
+            throw new IllegalArgumentException(SCHEDULE_BOTH_FIELDS);
         }
 
         if (hasDelay) {
             int delaySeconds = request.getDelaySeconds();
             if (delaySeconds < 0) {
-                throw new IllegalArgumentException("delaySeconds must be zero or positive");
+                throw new IllegalArgumentException(SCHEDULE_NEGATIVE_DELAY);
             }
             if (delaySeconds > MAX_DELAY_SECONDS) {
-                throw new IllegalArgumentException("delaySeconds cannot exceed " + MAX_DELAY_SECONDS);
+                throw new IllegalArgumentException(scheduleDelayTooLong(MAX_DELAY_SECONDS));
             }
             return now.plusSeconds(delaySeconds);
         }
@@ -34,10 +40,10 @@ public final class JobScheduling {
         if (hasScheduledAt) {
             Instant scheduledAt = request.getScheduledAt();
             if (scheduledAt.isBefore(now.minusSeconds(5))) {
-                throw new IllegalArgumentException("scheduledAt must be in the future");
+                throw new IllegalArgumentException(SCHEDULE_PAST_TIME);
             }
             if (scheduledAt.isAfter(now.plusSeconds(MAX_DELAY_SECONDS))) {
-                throw new IllegalArgumentException("scheduledAt cannot be more than 7 days ahead");
+                throw new IllegalArgumentException(scheduleTooFarAhead(MAX_DELAY_SECONDS));
             }
             return scheduledAt;
         }
