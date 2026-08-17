@@ -10,6 +10,7 @@ import {
 import { jobsApi } from '../api/client';
 import StatusBadge from '../components/StatusBadge';
 import { formatScheduledAt, isJobScheduled } from '../components/JobScheduleForm';
+import { useToast } from '../context/ToastContext';
 
 const PRE_BLOCK_SX = {
   bgcolor: 'background.default',
@@ -37,16 +38,17 @@ const SUPPORTED_DUPLICATE_TYPES = new Set([
 export default function JobDetailPage() {
   const { jobId } = useParams();
   const [job, setJob] = useState(null);
-  const [error, setError] = useState('');
+  const [loadError, setLoadError] = useState('');
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   const loadJob = async () => {
     try {
       const data = await jobsApi.get(jobId);
       setJob(data);
-      setError('');
+      setLoadError('');
     } catch (err) {
-      setError(err.message);
+      setLoadError(err.message);
     }
   };
 
@@ -60,8 +62,9 @@ export default function JobDetailPage() {
     try {
       const updated = await jobsApi.retry(jobId);
       setJob(updated);
+      showToast('Job queued for retry.', 'success');
     } catch (err) {
-      setError(err.message);
+      showToast(err.message, 'error');
     }
   };
 
@@ -79,14 +82,14 @@ export default function JobDetailPage() {
     });
   };
 
-  if (!job && !error) {
+  if (!job && !loadError) {
     return <Typography>Loading job...</Typography>;
   }
 
   return (
     <Box>
       <Button onClick={() => navigate('/')} sx={{ mb: 2 }}>Back to Dashboard</Button>
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {loadError && <Alert severity="error" sx={{ mb: 2 }}>{loadError}</Alert>}
       {job && (
         <>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3, flexWrap: 'wrap' }}>

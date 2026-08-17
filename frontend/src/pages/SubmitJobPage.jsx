@@ -12,6 +12,7 @@ import {
 import { jobsApi } from '../api/client';
 import JobPayloadForm, { buildPayload, getDefaultFormState, parsePayloadToForm } from '../components/JobPayloadForm';
 import JobScheduleForm, { buildScheduleFields, getDefaultScheduleState } from '../components/JobScheduleForm';
+import { useToast } from '../context/ToastContext';
 
 const JOB_TYPES = [
   { value: 'PYTHON_SCRIPT', label: 'Python Script' },
@@ -58,9 +59,9 @@ export default function SubmitJobPage() {
   const [form, setForm] = useState(initial.form);
   const [schedule, setSchedule] = useState(initial.schedule);
   const [fromDuplicate] = useState(initial.fromDuplicate);
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   const handleTypeChange = (newType) => {
     setType(newType);
@@ -69,15 +70,15 @@ export default function SubmitJobPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
     try {
       const payload = buildPayload(type, form);
       const scheduleFields = buildScheduleFields(schedule);
       const job = await jobsApi.create({ type, payload, ...scheduleFields });
+      showToast('Job submitted successfully.', 'success');
       navigate(`/jobs/${job.id}`);
     } catch (err) {
-      setError(err.message);
+      showToast(err.message, 'error');
     } finally {
       setLoading(false);
     }
@@ -92,7 +93,6 @@ export default function SubmitJobPage() {
             Form pre-filled from a previous job. Adjust anything you need before submitting.
           </Alert>
         )}
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <Box component="form" onSubmit={handleSubmit}>
           <TextField
             select
