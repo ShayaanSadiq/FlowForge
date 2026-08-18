@@ -111,7 +111,12 @@ export default function SubmitJobPage() {
           <JobPayloadForm type={type} form={form} onChange={setForm} />
           <JobScheduleForm schedule={schedule} onChange={setSchedule} />
           <ScheduleSummaryPreview schedule={schedule} />
-          <Button type="submit" variant="contained" sx={{ mt: 2 }} disabled={loading}>
+          <Button
+            type="submit"
+            variant="contained"
+            sx={{ mt: 2 }}
+            disabled={loading || !scheduleSummary.valid}
+          >
             {loading ? 'Submitting...' : 'Submit Job'}
           </Button>
         </Box>
