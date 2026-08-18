@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Alert,
@@ -11,7 +11,8 @@ import {
 } from '@mui/material';
 import { jobsApi } from '../api/client';
 import JobPayloadForm, { buildPayload, getDefaultFormState, parsePayloadToForm } from '../components/JobPayloadForm';
-import JobScheduleForm, { buildScheduleFields, getDefaultScheduleState } from '../components/JobScheduleForm';
+import JobScheduleForm, { buildScheduleFields, describeScheduleSummary, getDefaultScheduleState } from '../components/JobScheduleForm';
+import ScheduleSummaryPreview from '../components/ScheduleSummaryPreview';
 import { useToast } from '../context/ToastContext';
 
 const JOB_TYPES = [
@@ -62,6 +63,7 @@ export default function SubmitJobPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const scheduleSummary = useMemo(() => describeScheduleSummary(schedule), [schedule]);
 
   const handleTypeChange = (newType) => {
     setType(newType);
@@ -108,6 +110,7 @@ export default function SubmitJobPage() {
           </TextField>
           <JobPayloadForm type={type} form={form} onChange={setForm} />
           <JobScheduleForm schedule={schedule} onChange={setSchedule} />
+          <ScheduleSummaryPreview schedule={schedule} />
           <Button type="submit" variant="contained" sx={{ mt: 2 }} disabled={loading}>
             {loading ? 'Submitting...' : 'Submit Job'}
           </Button>
