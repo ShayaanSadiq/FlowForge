@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Alert,
@@ -13,6 +13,7 @@ import { jobsApi } from '../api/client';
 import JobPayloadForm, { buildPayload, getDefaultFormState, parsePayloadToForm } from '../components/JobPayloadForm';
 import JobScheduleForm, { buildScheduleFields, describeScheduleSummary, getDefaultScheduleState } from '../components/JobScheduleForm';
 import ScheduleSummaryPreview from '../components/ScheduleSummaryPreview';
+import { useSubmitShortcut } from '../hooks/useSubmitShortcut';
 import { useToast } from '../context/ToastContext';
 
 const JOB_TYPES = [
@@ -64,6 +65,12 @@ export default function SubmitJobPage() {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const scheduleSummary = useMemo(() => describeScheduleSummary(schedule), [schedule]);
+  const formRef = useRef(null);
+  const canSubmit = !loading && scheduleSummary.valid;
+
+  useSubmitShortcut(() => {
+    formRef.current?.requestSubmit();
+  }, { enabled: canSubmit });
 
   const handleTypeChange = (newType) => {
     setType(newType);
@@ -95,7 +102,7 @@ export default function SubmitJobPage() {
             Form pre-filled from a previous job. Adjust anything you need before submitting.
           </Alert>
         )}
-        <Box component="form" onSubmit={handleSubmit}>
+        <Box component="form" ref={formRef} onSubmit={handleSubmit}>
           <TextField
             select
             fullWidth
@@ -115,10 +122,13 @@ export default function SubmitJobPage() {
             type="submit"
             variant="contained"
             sx={{ mt: 2 }}
-            disabled={loading || !scheduleSummary.valid}
+            disabled={!canSubmit}
           >
             {loading ? 'Submitting...' : 'Submit Job'}
           </Button>
+          <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+            Tip: press Ctrl+Enter (or Cmd+Enter on Mac) to submit from any field.
+          </Typography>
         </Box>
       </Paper>
     </Box>
