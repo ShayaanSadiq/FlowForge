@@ -121,3 +121,135 @@ export function formatScheduledAt(scheduledAt) {
   }
   return new Date(scheduledAt).toLocaleString();
 }
+
+export function formatScheduleDuration(totalSeconds) {
+  const seconds = Math.max(0, Math.round(totalSeconds));
+  if (seconds === 0) {
+    return 'immediately';
+  }
+
+  const days = Math.floor(seconds / 86_400);
+  const hours = Math.floor((seconds % 86_400) / 3_600);
+  const minutes = Math.floor((seconds % 3_600) / 60);
+  const remainingSeconds = seconds % 60;
+  const parts = [];
+
+  if (days > 0) {
+    parts.push(`${days} day${days === 1 ? '' : 's'}`);
+  }
+  if (hours > 0) {
+    parts.push(`${hours} hour${hours === 1 ? '' : 's'}`);
+  }
+  if (minutes > 0) {
+    parts.push(`${minutes} minute${minutes === 1 ? '' : 's'}`);
+  }
+  if (remainingSeconds > 0 && days === 0) {
+    parts.push(`${remainingSeconds} second${remainingSeconds === 1 ? '' : 's'}`);
+  }
+
+  return parts.join(' ');
+}
+
+/**
+ * Builds a human-readable schedule summary for the submit form preview.
+ */
+export function describeScheduleSummary(schedule, now = new Date()) {
+  if (schedule.mode === 'immediate') {
+    return {
+      title: 'Run immediately',
+      detail: 'The job will be queued as soon as you submit.',
+      severity: 'info',
+      valid: true,
+      runAt: now,
+    };
+  }
+
+  if (schedule.mode === 'delay') {
+    const delaySeconds = Number(schedule.delaySeconds);
+    if (!Number.isFinite(delaySeconds) || delaySeconds < 0) {
+      return {
+        title: 'Invalid delay',
+        detail: 'Enter a non-negative number of seconds.',
+        severity: 'error',
+        valid: false,
+        runAt: null,
+      };
+    }
+    if (delaySeconds > MAX_DELAY_SECONDS) {
+      return {
+        title: 'Delay too long',
+        detail: 'Maximum delay is 7 days.',
+        severity: 'error',
+        valid: false,
+        runAt: null,
+      };
+    }
+    if (delaySeconds === 0) {
+      return {
+        title: 'Run immediately',
+        detail: 'A delay of 0 seconds runs as soon as you submit.',
+        severity: 'info',
+        valid: true,
+        runAt: now,
+      };
+    }
+
+    const runAt = new Date(now.getTime() + delaySeconds * 1_000);
+    return {
+      title: `Runs in ${formatScheduleDuration(delaySeconds)}`,
+      detail: `Scheduled for ${runAt.toLocaleString()} (your local time).`,
+      severity: 'info',
+      valid: true,
+      runAt,
+    };
+  }
+
+  if (schedule.mode === 'datetime') {
+    if (!schedule.scheduledAtLocal) {
+      return {
+        title: 'No run time selected',
+        detail: 'Choose when the job should run.',
+        severity: 'warning',
+        valid: false,
+        runAt: null,
+      };
+    }
+
+    const runAt = new Date(schedule.scheduledAtLocal);
+    if (Number.isNaN(runAt.getTime())) {
+      return {
+        title: 'Invalid run time',
+        detail: 'Choose a valid date and time.',
+        severity: 'error',
+        valid: false,
+        runAt: null,
+      };
+    }
+    if (runAt.getTime() <= now.getTime()) {
+      return {
+        title: 'Run time is in the past',
+        detail: 'Pick a future date and time.',
+        severity: 'error',
+        valid: false,
+        runAt,
+      };
+    }
+
+    const secondsUntil = Math.round((runAt.getTime() - now.getTime()) / 1_000);
+    return {
+      title: `Runs at ${runAt.toLocaleString()}`,
+      detail: `About ${formatScheduleDuration(secondsUntil)} from now.`,
+      severity: 'info',
+      valid: true,
+      runAt,
+    };
+  }
+
+  return {
+    title: 'Run immediately',
+    detail: 'The job will be queued as soon as you submit.',
+    severity: 'info',
+    valid: true,
+    runAt: now,
+  };
+}
