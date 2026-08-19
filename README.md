@@ -30,7 +30,7 @@ Local development uses Docker Compose with MongoDB, API, Worker, and Frontend se
 ## Quick Start (Docker)
 
 ```bash
-git clone github.com/ShayaanSadiq/FlowForge
+git clone git@github.com:ShayaanSadiq/FlowForge.git
 cd Agile
 docker compose up --build
 ```
