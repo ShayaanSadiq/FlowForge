@@ -141,9 +141,25 @@ export default function DashboardPage() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'stretch', sm: 'center' },
+          gap: 2,
+          mb: 3,
+        }}
+      >
         <Typography variant="h4" fontWeight={700}>Job Dashboard</Typography>
-        <Button component={RouterLink} to="/jobs/new" variant="contained">Submit Job</Button>
+        <Button
+          component={RouterLink}
+          to="/jobs/new"
+          variant="contained"
+          sx={{ alignSelf: { xs: 'stretch', sm: 'auto' } }}
+        >
+          Submit Job
+        </Button>
       </Box>
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
@@ -207,25 +223,36 @@ export default function DashboardPage() {
             </FormControl>
           </Grid>
         </Grid>
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: { xs: 'stretch', sm: 'flex-end' }, mt: 2 }}>
           <Button
             size="small"
             variant="outlined"
             onClick={handleClearFilters}
             disabled={!hasActiveFilters}
+            fullWidth
+            sx={{ maxWidth: { sm: 'none' }, width: { sm: 'auto' } }}
           >
             Clear filters
           </Button>
         </Box>
       </Paper>
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 2 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'stretch', sm: 'center' },
+          mb: 2,
+          gap: 2,
+        }}
+      >
         <Typography variant="body2" color="text.secondary">
           {totalJobs === 0
             ? 'No jobs match the current filters'
             : `Showing ${rangeStart}–${rangeEnd} of ${totalJobs} job${totalJobs !== 1 ? 's' : ''}`}
         </Typography>
-        <FormControl size="small" sx={{ minWidth: 140 }}>
+        <FormControl size="small" sx={{ minWidth: { sm: 140 }, width: { xs: '100%', sm: 'auto' } }}>
           <InputLabel id="page-size-label">Jobs per page</InputLabel>
           <Select
             labelId="page-size-label"
