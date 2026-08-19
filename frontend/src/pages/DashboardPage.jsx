@@ -9,20 +9,14 @@ import {
   Grid,
   InputLabel,
   MenuItem,
-  Pagination,
   Paper,
   Select,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   Typography,
 } from '@mui/material';
 import { jobsApi, statsApi } from '../api/client';
-import StatusBadge from '../components/StatusBadge';
-import { formatScheduledAt } from '../components/JobScheduleForm';
+import JobListCards from '../components/JobListCards';
+import JobListTable from '../components/JobListTable';
+import useIsMobile from '../hooks/useIsMobile';
 import { useToast } from '../context/ToastContext';
 
 const PAGE_SIZE_OPTIONS = [20, 50, 100];
@@ -63,6 +57,7 @@ export default function DashboardPage() {
   const [totalPages, setTotalPages] = useState(0);
   const { showToast } = useToast();
   const lastErrorRef = useRef('');
+  const isMobile = useIsMobile('md');
 
   const loadData = useCallback(async () => {
     try {
@@ -267,53 +262,22 @@ export default function DashboardPage() {
         </FormControl>
       </Box>
 
-      <Paper>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Type</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Runs at</TableCell>
-              <TableCell>Attempts</TableCell>
-              <TableCell>Created</TableCell>
-              <TableCell />
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {jobs.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center">No jobs match the current filters.</TableCell>
-              </TableRow>
-            ) : jobs.map((job) => (
-              <TableRow key={job.id} hover>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 12 }}>{job.id?.slice(-8)}</TableCell>
-                <TableCell>{job.type}</TableCell>
-                <TableCell><StatusBadge status={job.status} scheduledAt={job.scheduledAt} /></TableCell>
-                <TableCell>{formatScheduledAt(job.scheduledAt)}</TableCell>
-                <TableCell>{job.attempts}/{job.maxAttempts}</TableCell>
-                <TableCell>{job.createdAt ? new Date(job.createdAt).toLocaleString() : '-'}</TableCell>
-                <TableCell>
-                  <Button component={RouterLink} to={`/jobs/${job.id}`} size="small">View</Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-
-        {totalPages > 1 && (
-          <Stack direction="row" justifyContent="center" sx={{ py: 2 }}>
-            <Pagination
-              count={totalPages}
-              page={page + 1}
-              onChange={handlePageChange}
-              color="primary"
-              showFirstButton
-              showLastButton
-            />
-          </Stack>
-        )}
-      </Paper>
+      {isMobile ? (
+        <JobListCards
+          jobs={jobs}
+          totalPages={totalPages}
+          page={page}
+          onPageChange={handlePageChange}
+          compactPagination
+        />
+      ) : (
+        <JobListTable
+          jobs={jobs}
+          totalPages={totalPages}
+          page={page}
+          onPageChange={handlePageChange}
+        />
+      )}
     </Box>
   );
 }
