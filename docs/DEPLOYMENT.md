@@ -2,6 +2,8 @@
 
 This guide covers deploying FlowForge across all three target platforms: Docker (local), Vercel (frontend), and AWS (backend + worker).
 
+**Deploy day runbook:** see [DEPLOY-CHECKLIST.md](DEPLOY-CHECKLIST.md) for a step-by-step checklist.
+
 ## Prerequisites
 
 - Docker and Docker Compose
@@ -10,7 +12,7 @@ This guide covers deploying FlowForge across all three target platforms: Docker 
 - AWS account (for production backend)
 - MongoDB Atlas account (free M0 tier)
 - Vercel account (free tier)
-- GitHub account (for CI/CD)
+- GitHub account (for CI)
 
 ---
 
@@ -19,6 +21,8 @@ This guide covers deploying FlowForge across all three target platforms: Docker 
 The fastest way to run the full stack:
 
 ```bash
+git clone git@github.com:ShayaanSadiq/FlowForge.git
+cd FlowForge
 docker compose up --build
 ```
 
@@ -36,10 +40,13 @@ docker compose down -v
 
 ### Environment Variables (Docker Compose)
 
+Copy `.env.example` to `.env` for local overrides.
+
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `SPRING_DATA_MONGODB_URI` | `mongodb://mongo:27017/flowforge` | MongoDB connection |
 | `FLOWFORGE_JWT_SECRET` | dev secret | JWT signing key (change in prod) |
+| `FLOWFORGE_CORS_ORIGINS` | _(empty)_ | Extra CORS origin patterns, comma-separated |
 
 ---
 
@@ -56,7 +63,7 @@ docker compose down -v
 mongodb+srv://<user>:<password>@cluster0.xxxxx.mongodb.net/flowforge?retryWrites=true&w=majority
 ```
 
-Set as `SPRING_DATA_MONGODB_URI` in AWS Secrets Manager or environment variables.
+Set as `SPRING_DATA_MONGODB_URI` in AWS Secrets Manager.
 
 ---
 
@@ -67,14 +74,16 @@ Set as `SPRING_DATA_MONGODB_URI` in AWS Secrets Manager or environment variables
 1. Push this repo to GitHub
 2. Import the project in [vercel.com/new](https://vercel.com/new)
 3. Set **Root Directory** to `frontend`
-4. Framework Preset: **Vite**
+4. Framework Preset: **Vite** (configured in `frontend/vercel.json`)
 5. Add environment variable:
 
 | Name | Value |
 |------|-------|
-| `VITE_API_BASE_URL` | `https://your-api-domain.com` |
+| `VITE_API_BASE_URL` | `https://api.yourdomain.com` |
 
 6. Deploy
+
+See `frontend/.env.example` for local dev equivalents.
 
 ### Option B: Vercel CLI
 
@@ -88,17 +97,20 @@ vercel --prod
 
 - Vercel serves the frontend over HTTPS
 - Your AWS backend must also use HTTPS (via ALB + ACM certificate)
-- Update CORS in `SecurityConfig.java` to include your Vercel domain:
+- Default CORS allows `http://localhost:*` and `https://*.vercel.app`
+- For a custom domain, set on the API container:
 
-```java
-config.setAllowedOriginPatterns(List.of(
-    "https://your-app.vercel.app"
-));
 ```
+FLOWFORGE_CORS_ORIGINS=https://your-frontend-domain.com
+```
+
+Multiple origins: comma-separated patterns.
 
 ---
 
 ## 4. Backend on AWS ECS Fargate
+
+Deployment is **manual** via scripts (no GitHub Actions deploy workflow).
 
 ### Step 1: Create ECR Repositories
 
@@ -109,17 +121,16 @@ aws ecr create-repository --repository-name flowforge-worker
 
 ### Step 2: Build and Push Docker Images
 
+Replace `ACCOUNT_ID` in `.aws/flowforge-api-task.json` and `.aws/flowforge-worker-task.json`, then:
+
 ```bash
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com
-
-docker build --target api -t flowforge-api ./backend
-docker tag flowforge-api:latest ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/flowforge-api:latest
-docker push ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/flowforge-api:latest
-
-docker build --target worker -t flowforge-worker ./backend
-docker tag flowforge-worker:latest ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/flowforge-worker:latest
-docker push ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/flowforge-worker:latest
+export AWS_ACCOUNT_ID=YOUR_ACCOUNT_ID
+export AWS_REGION=us-east-1
+chmod +x scripts/push-ecr.sh
+./scripts/push-ecr.sh
 ```
+
+This builds and pushes both **API** (port 8080) and **worker** (port 8081, includes Python 3) images.
 
 ### Step 3: Store Secrets in AWS Secrets Manager
 
@@ -128,30 +139,24 @@ aws secretsmanager create-secret --name flowforge/mongodb-uri --secret-string "m
 aws secretsmanager create-secret --name flowforge/jwt-secret --secret-string "your-256-bit-secret-key"
 ```
 
+Update secret ARNs in both task definition files if your region/account differs.
+
 ### Step 4: Create ECS Cluster and Services
 
 1. Create an ECS cluster named `flowforge-cluster`
-2. Update `.aws/flowforge-api-task.json` with your account ID and ECR image URI
-3. Register the task definition:
+2. Create CloudWatch log groups: `/ecs/flowforge-api`, `/ecs/flowforge-worker`
+3. Register task definitions:
 
 ```bash
 aws ecs register-task-definition --cli-input-json file://.aws/flowforge-api-task.json
+aws ecs register-task-definition --cli-input-json file://.aws/flowforge-worker-task.json
 ```
 
-4. Create a Fargate service with an Application Load Balancer
-5. Configure ALB listener on port 443 with an ACM certificate
+4. **API service:** Fargate + Application Load Balancer on port 443 (HTTPS)
+5. **Worker service:** Fargate, no load balancer, desired count 1
 6. Point your API domain (e.g. `api.yourdomain.com`) to the ALB
 
-### Step 5: GitHub Actions CI/CD
-
-Add these secrets to your GitHub repository:
-
-| Secret | Description |
-|--------|-------------|
-| `AWS_ACCESS_KEY_ID` | IAM user with ECR + ECS permissions |
-| `AWS_SECRET_ACCESS_KEY` | IAM secret key |
-
-On push to `main`, `.github/workflows/deploy-backend.yml` builds, pushes to ECR, and deploys to ECS.
+Both services need outbound access to MongoDB Atlas.
 
 ---
 
@@ -164,24 +169,36 @@ Spring profiles control runtime behavior:
 | `dev` | Local development | Console, DEBUG level |
 | `prod` | AWS production | JSON structured logs |
 
-Activate with `SPRING_PROFILES_ACTIVE=prod`.
+Activate with `SPRING_PROFILES_ACTIVE=prod` (set in ECS task definitions).
 
 ---
 
-## 6. Health Checks
-
-Verify deployments:
+## 6. Health Checks and Verification
 
 ```bash
-# API health
-curl https://api.yourdomain.com/actuator/health
-
-# Submit a test job (after login)
-curl -X POST https://api.yourdomain.com/api/jobs \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"type":"HASH_GENERATE","payload":"{\"text\":\"hello\",\"algorithm\":\"SHA-256\"}"}'
+export API_URL=https://api.yourdomain.com
+export FRONTEND_URL=https://your-app.vercel.app
+./scripts/verify-deployment.sh
 ```
+
+Manual API check:
+
+```bash
+curl https://api.yourdomain.com/actuator/health
+```
+
+### API Endpoints (production)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/auth/register` | Create account |
+| POST | `/api/auth/login` | Get JWT token |
+| POST | `/api/jobs` | Submit a job |
+| GET | `/api/jobs` | List jobs (filter by status/type) |
+| GET | `/api/jobs/{id}` | Job detail + logs |
+| POST | `/api/jobs/{id}/retry` | Retry failed job |
+| POST | `/api/jobs/{id}/cancel` | Cancel pending job |
+| GET | `/api/stats` | Job counts by status |
 
 ---
 
