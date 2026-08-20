@@ -89,11 +89,12 @@ Frontend dev server proxies API calls to `http://localhost:8080`.
 | GET    | `/api/jobs`           | Yes  | List your jobs        |
 | GET    | `/api/jobs/{id}`      | Yes  | Job detail + logs     |
 | POST   | `/api/jobs/{id}/retry`| Yes  | Retry failed job      |
+| POST   | `/api/jobs/{id}/cancel`| Yes | Cancel pending job    |
 | GET    | `/api/stats`          | Yes  | Job counts by status  |
 
 ## Deployment
 
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for full guides on:
+See [docs/DEPLOY-CHECKLIST.md](docs/DEPLOY-CHECKLIST.md) for tomorrow's step-by-step runbook, or [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for full reference on:
 
 - **Docker Compose** — local full stack
 - **Vercel** — frontend deployment
