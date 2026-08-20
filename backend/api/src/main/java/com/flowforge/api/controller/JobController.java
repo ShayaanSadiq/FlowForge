@@ -52,4 +52,9 @@ public class JobController {
     public JobResponse retryJob(Authentication authentication, @PathVariable String jobId) {
         return jobService.retryJob(authentication.getName(), jobId);
     }
+
+    @PostMapping("/{jobId}/cancel")
+    public JobResponse cancelJob(Authentication authentication, @PathVariable String jobId) {
+        return jobService.cancelJob(authentication.getName(), jobId);
+    }
 }
