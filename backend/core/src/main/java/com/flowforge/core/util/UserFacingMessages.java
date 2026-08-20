@@ -11,13 +11,14 @@ public final class UserFacingMessages {
     public static final String USER_NOT_FOUND = "User account was not found.";
     public static final String JOB_NOT_FOUND = "That job was not found.";
     public static final String RETRY_NOT_ALLOWED = "Only failed or dead-letter jobs can be retried.";
+    public static final String CANCEL_NOT_ALLOWED = "Only pending jobs can be cancelled.";
 
     private UserFacingMessages() {
     }
 
     public static String unsupportedStatusFilter(String filter) {
         return "Unknown status filter \"" + filter
-                + "\". Try Pending, Running, Failed, Scheduled, or All.";
+                + "\". Try Pending, Running, Failed, Cancelled, Scheduled, or All.";
     }
 
     public static String deprecatedJobType(String type) {
