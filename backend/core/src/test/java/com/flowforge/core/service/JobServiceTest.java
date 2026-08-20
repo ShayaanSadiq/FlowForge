@@ -21,6 +21,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -42,7 +43,7 @@ class JobServiceTest {
     @BeforeEach
     void setUp() {
         AuditService auditService = new AuditService(mock(AuditEventRepository.class));
-        jobService = new JobService(jobRepository, auditService);
+        jobService = new JobService(jobRepository, auditService, new JobStateMachine());
     }
 
     @Test
@@ -98,5 +99,38 @@ class JobServiceTest {
         assertThatThrownBy(() -> jobService.listJobs("user-1", "NOT_A_STATUS", null, pageable))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Unknown status filter");
+    }
+
+    @Test
+    void cancelJobMarksPendingJobAsCancelled() {
+        Job job = Job.builder()
+                .id("job-1")
+                .userId("user-1")
+                .type(JobType.PYTHON_SCRIPT)
+                .payload("print('hi')")
+                .status(JobStatus.PENDING)
+                .build();
+        when(jobRepository.findByIdAndUserId("job-1", "user-1")).thenReturn(Optional.of(job));
+        when(jobRepository.save(job)).thenReturn(job);
+
+        JobResponse response = jobService.cancelJob("user-1", "job-1");
+
+        assertThat(response.getStatus()).isEqualTo(JobStatus.CANCELLED);
+        assertThat(job.getFinishedAt()).isNotNull();
+        verify(jobRepository).save(job);
+    }
+
+    @Test
+    void cancelJobRejectsRunningJobs() {
+        Job job = Job.builder()
+                .id("job-1")
+                .userId("user-1")
+                .status(JobStatus.RUNNING)
+                .build();
+        when(jobRepository.findByIdAndUserId("job-1", "user-1")).thenReturn(Optional.of(job));
+
+        assertThatThrownBy(() -> jobService.cancelJob("user-1", "job-1"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Only pending jobs can be cancelled");
     }
 }

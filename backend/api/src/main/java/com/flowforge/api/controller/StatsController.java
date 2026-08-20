@@ -28,7 +28,8 @@ public class StatsController {
                 "running", jobRepository.countByStatus(JobStatus.RUNNING),
                 "succeeded", jobRepository.countByStatus(JobStatus.SUCCEEDED),
                 "failed", jobRepository.countByStatus(JobStatus.FAILED),
-                "deadLetter", jobRepository.countByStatus(JobStatus.DEAD_LETTER)
+                "deadLetter", jobRepository.countByStatus(JobStatus.DEAD_LETTER),
+                "cancelled", jobRepository.countByStatus(JobStatus.CANCELLED)
         );
     }
 }

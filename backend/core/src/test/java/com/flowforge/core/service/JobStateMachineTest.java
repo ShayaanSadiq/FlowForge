@@ -56,4 +56,21 @@ class JobStateMachineTest {
         assertThatThrownBy(() -> stateMachine.markSucceeded(job, "done"))
                 .isInstanceOf(IllegalStateException.class);
     }
+
+    @Test
+    void pendingJobCanBeCancelled() {
+        stateMachine.markCancelled(job);
+
+        assertThat(job.getStatus()).isEqualTo(JobStatus.CANCELLED);
+        assertThat(job.getFinishedAt()).isNotNull();
+    }
+
+    @Test
+    void runningJobCannotBeCancelled() {
+        stateMachine.markRunning(job);
+
+        assertThatThrownBy(() -> stateMachine.markCancelled(job))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Only pending jobs can be cancelled");
+    }
 }
