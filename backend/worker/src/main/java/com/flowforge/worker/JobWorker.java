@@ -37,23 +37,28 @@ public class JobWorker {
     }
 
     private void processJob(Job job) {
+        Job current = jobRepository.findById(job.getId()).orElse(null);
+        if (current == null || current.getStatus() != JobStatus.PENDING) {
+            return;
+        }
+
         try {
-            jobStateMachine.markRunning(job);
-            jobRepository.save(job);
+            jobStateMachine.markRunning(current);
+            jobRepository.save(current);
 
-            JobExecutor.ExecutionResult result = jobExecutor.execute(job);
-            jobStateMachine.markSucceeded(job, result.output());
-            jobRepository.save(job);
+            JobExecutor.ExecutionResult result = jobExecutor.execute(current);
+            jobStateMachine.markSucceeded(current, result.output());
+            jobRepository.save(current);
 
-            log.info("Job {} succeeded in {}ms", job.getId(), result.durationMs());
+            log.info("Job {} succeeded in {}ms", current.getId(), result.durationMs());
         } catch (Exception ex) {
-            log.error("Job {} failed: {}", job.getId(), ex.getMessage());
-            jobExecutor.appendLog(job, "ERROR: " + ex.getMessage());
-            JobStatus nextStatus = jobStateMachine.markFailed(job, ex.getMessage());
-            jobRepository.save(job);
+            log.error("Job {} failed: {}", current.getId(), ex.getMessage());
+            jobExecutor.appendLog(current, "ERROR: " + ex.getMessage());
+            JobStatus nextStatus = jobStateMachine.markFailed(current, ex.getMessage());
+            jobRepository.save(current);
 
             if (nextStatus == JobStatus.DEAD_LETTER) {
-                log.warn("Job {} moved to dead letter queue after {} attempts", job.getId(), job.getAttempts());
+                log.warn("Job {} moved to dead letter queue after {} attempts", current.getId(), current.getAttempts());
             }
         }
     }

@@ -4,6 +4,10 @@ import com.flowforge.core.domain.Job;
 import com.flowforge.core.domain.JobStatus;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
+
+import static com.flowforge.core.util.UserFacingMessages.CANCEL_NOT_ALLOWED;
+
 @Component
 public class JobStateMachine {
 
@@ -51,12 +55,20 @@ public class JobStateMachine {
         job.getLogs().clear();
     }
 
+    public void markCancelled(Job job) {
+        if (job.getStatus() != JobStatus.PENDING) {
+            throw new IllegalStateException(CANCEL_NOT_ALLOWED);
+        }
+        job.setStatus(JobStatus.CANCELLED);
+        job.setFinishedAt(Instant.now());
+    }
+
     private void validateTransition(JobStatus current, JobStatus next) {
         boolean valid = switch (current) {
             case PENDING -> next == JobStatus.RUNNING;
             case RUNNING -> next == JobStatus.SUCCEEDED || next == JobStatus.FAILED;
             case FAILED -> next == JobStatus.FAILED || next == JobStatus.PENDING;
-            case SUCCEEDED, DEAD_LETTER -> false;
+            case SUCCEEDED, DEAD_LETTER, CANCELLED -> false;
         };
 
         if (!valid) {
