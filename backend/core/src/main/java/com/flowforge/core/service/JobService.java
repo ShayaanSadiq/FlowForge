@@ -25,6 +25,7 @@ public class JobService {
 
     private final JobRepository jobRepository;
     private final AuditService auditService;
+    private final JobStateMachine jobStateMachine;
 
     public JobResponse createJob(String userId, CreateJobRequest request) {
         if (request.getType() != null && request.getType().isDeprecated()) {
@@ -101,6 +102,16 @@ public class JobService {
 
         Job saved = jobRepository.save(job);
         auditService.log(userId, "RETRY", "JOB", saved.getId(), "Manual retry requested");
+        return toResponse(saved);
+    }
+
+    public JobResponse cancelJob(String userId, String jobId) {
+        Job job = jobRepository.findByIdAndUserId(jobId, userId)
+                .orElseThrow(() -> new NoSuchElementException(JOB_NOT_FOUND));
+
+        jobStateMachine.markCancelled(job);
+        Job saved = jobRepository.save(job);
+        auditService.log(userId, "CANCEL", "JOB", saved.getId(), "Job cancelled before execution");
         return toResponse(saved);
     }
 
