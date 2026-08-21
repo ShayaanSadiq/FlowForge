@@ -1,8 +1,10 @@
 package com.flowforge.api.controller;
 
 import com.flowforge.core.domain.JobType;
+import com.flowforge.core.dto.AuditEventResponse;
 import com.flowforge.core.dto.CreateJobRequest;
 import com.flowforge.core.dto.JobResponse;
+import com.flowforge.core.service.AuditService;
 import com.flowforge.core.service.JobService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,12 +23,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/jobs")
 @RequiredArgsConstructor
 public class JobController {
 
     private final JobService jobService;
+    private final AuditService auditService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -56,5 +61,11 @@ public class JobController {
     @PostMapping("/{jobId}/cancel")
     public JobResponse cancelJob(Authentication authentication, @PathVariable String jobId) {
         return jobService.cancelJob(authentication.getName(), jobId);
+    }
+
+    @GetMapping("/{jobId}/events")
+    public List<AuditEventResponse> listJobEvents(Authentication authentication, @PathVariable String jobId) {
+        jobService.getJob(authentication.getName(), jobId);
+        return auditService.listJobEvents(authentication.getName(), jobId);
     }
 }
