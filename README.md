@@ -85,9 +85,11 @@ Frontend dev server proxies API calls to `http://localhost:8080`.
 |--------|-----------------------|------|-----------------------|
 | POST   | `/api/auth/register`  | No   | Create account        |
 | POST   | `/api/auth/login`     | No   | Get JWT token         |
+| GET    | `/api/auth/me`        | Yes  | Current user profile  |
 | POST   | `/api/jobs`           | Yes  | Submit a job          |
 | GET    | `/api/jobs`           | Yes  | List your jobs        |
 | GET    | `/api/jobs/{id}`      | Yes  | Job detail + logs     |
+| GET    | `/api/jobs/{id}/events`| Yes | Job audit event trail |
 | POST   | `/api/jobs/{id}/retry`| Yes  | Retry failed job      |
 | POST   | `/api/jobs/{id}/cancel`| Yes | Cancel pending job    |
 | GET    | `/api/stats`          | Yes  | Job counts by status  |

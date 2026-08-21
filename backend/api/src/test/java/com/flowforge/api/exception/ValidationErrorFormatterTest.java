@@ -12,6 +12,8 @@ class ValidationErrorFormatterTest {
                 .isEqualTo("Please select a job type.");
         assertThat(ValidationErrorFormatter.formatFieldError("payload", "must not be blank"))
                 .isEqualTo("Job input cannot be empty.");
+        assertThat(ValidationErrorFormatter.formatFieldError("payload", "size must be between 0 and 500000"))
+                .contains("too large");
     }
 
     @Test
