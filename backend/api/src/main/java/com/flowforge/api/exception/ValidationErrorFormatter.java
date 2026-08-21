@@ -12,7 +12,9 @@ final class ValidationErrorFormatter {
 
         return switch (field) {
             case "type" -> "Please select a job type.";
-            case "payload" -> "Job input cannot be empty.";
+            case "payload" -> message.toLowerCase().contains("size")
+                    ? "Job input is too large. Maximum size is 500,000 characters."
+                    : "Job input cannot be empty.";
             case "email" -> message.contains("must not be blank") || message.contains("must not be null")
                     ? "Email is required."
                     : "Please enter a valid email address.";
