@@ -25,4 +25,5 @@ public class JobResponse {
     private Instant scheduledAt;
     private Instant startedAt;
     private Instant finishedAt;
+    private Long durationMs;
 }

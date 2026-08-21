@@ -130,6 +130,14 @@ public class JobService {
                 .scheduledAt(job.getScheduledAt())
                 .startedAt(job.getStartedAt())
                 .finishedAt(job.getFinishedAt())
+                .durationMs(computeDurationMs(job))
                 .build();
+    }
+
+    private Long computeDurationMs(Job job) {
+        if (job.getStartedAt() == null || job.getFinishedAt() == null) {
+            return null;
+        }
+        return job.getFinishedAt().toEpochMilli() - job.getStartedAt().toEpochMilli();
     }
 }
