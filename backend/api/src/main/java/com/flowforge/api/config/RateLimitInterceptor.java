@@ -3,6 +3,7 @@ package com.flowforge.api.config;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -17,7 +18,8 @@ public class RateLimitInterceptor implements HandlerInterceptor {
     private final Map<String, Window> windows = new ConcurrentHashMap<>();
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
+            throws Exception {
         if (!request.getRequestURI().equals("/api/jobs") || !"POST".equals(request.getMethod())) {
             return true;
         }
@@ -29,6 +31,9 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         }
 
         response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
+        response.setHeader("Retry-After", "60");
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.getWriter().write("{\"detail\":\"Too many job submissions. Try again in about a minute.\"}");
         return false;
     }
 
