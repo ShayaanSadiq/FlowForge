@@ -58,4 +58,10 @@ public interface JobRepository extends MongoRepository<Job, String> {
     Optional<Job> findByIdAndUserId(String id, String userId);
 
     long countByStatus(JobStatus status);
+
+    long countByUserId(String userId);
+
+    long countByUserIdAndStatus(String userId, JobStatus status);
+
+    long countByUserIdAndStatusAndScheduledAtAfter(String userId, JobStatus status, Instant scheduledAt);
 }
